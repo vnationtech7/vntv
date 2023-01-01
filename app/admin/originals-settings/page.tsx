@@ -11,7 +11,16 @@ import { type MediaAsset } from "@/app/admin/media/actions";
 import { getOriginalsSettings, updateOriginalsSettings, type OriginalsSettings } from "@/app/actions/originals";
 import { Save, Image as ImageIcon, X } from "lucide-react";
 
+import { RequireEditor } from "@/components/auth/require-role-client";
 export default function OriginalsSettingsPage() {
+  return (
+    <RequireEditor>
+      <OriginalsSettingsPageContent />
+    </RequireEditor>
+  );
+}
+
+function OriginalsSettingsPageContent() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);

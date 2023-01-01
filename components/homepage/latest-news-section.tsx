@@ -43,8 +43,8 @@ export function LatestNewsSection({ articles }: LatestNewsSectionProps) {
         </Link>
       </div>
 
-      {/* Articles Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+      {/* Articles Grid - 2 items per row for bigger cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {articles.map((article) => (
           <ContentCard
             key={article.id}
@@ -63,7 +63,7 @@ export function LatestNewsSection({ articles }: LatestNewsSectionProps) {
             imagePath={article.featured_image?.storage_path}
             imageUrl={article.image_url}
             imageAlt={article.featured_image?.alt_text}
-            variant="compact"
+            variant="horizontal"
             contentType={article.content_type || "article"}
             sourceName={article.source_name}
           />

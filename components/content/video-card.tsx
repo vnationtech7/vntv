@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import { Play } from "lucide-react";
+import { extractYouTubeId, getYouTubeThumbnail } from "@/lib/utils/youtube";
 
 export interface VideoCardProps {
   id: string;
@@ -41,20 +44,6 @@ export function VideoCard({
     return count.toString();
   };
 
-  const extractYouTubeId = (url: string) => {
-    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/);
-    return match?.[1] || null;
-  };
-
-  const getYouTubeThumbnail = (videoId: string, quality: 'hq' | 'mq' | 'sd' = 'hq') => {
-    const qualityMap = {
-      hq: 'maxresdefault',
-      mq: 'hqdefault',
-      sd: 'sddefault'
-    };
-    return `https://img.youtube.com/vi/${videoId}/${qualityMap[quality]}.jpg`;
-  };
-
   /**
    * Get thumbnail URL with priority:
    * 1. Custom uploaded thumbnail (from storage_path)
@@ -69,7 +58,7 @@ export function VideoCard({
       return `${supabaseUrl}/storage/v1/object/public/${bucket}/${thumbnailPath}`;
     }
     
-    // Priority 2: YouTube thumbnail
+    // Priority 2: YouTube thumbnail for YouTube videos
     if (sourceType === "youtube" && sourceUrl) {
       const videoId = extractYouTubeId(sourceUrl);
       if (videoId) {
@@ -82,6 +71,16 @@ export function VideoCard({
   };
 
   const thumbnailUrl = getThumbnail();
+  
+  // Fallback to YouTube thumbnail if custom thumbnail fails to load
+  const handleThumbnailError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    if (sourceType === "youtube" && sourceUrl && thumbnailPath) {
+      const videoId = extractYouTubeId(sourceUrl);
+      if (videoId) {
+        e.currentTarget.src = getYouTubeThumbnail(videoId, "hq");
+      }
+    }
+  };
 
   return (
     <Link href={`/video/${slug}`} className="group block">
@@ -93,6 +92,7 @@ export function VideoCard({
               src={thumbnailUrl}
               alt={title}
               className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              onError={handleThumbnailError}
             />
           ) : sourceType === "upload" && sourceUrl ? (
             // For uploaded videos without thumbnail, show video frame

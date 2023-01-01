@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { MediaUploadDialog } from "@/components/cms/media-upload-dialog";
 import { MediaDetailsDialog } from "@/components/cms/media-details-dialog";
+import { RequireVideoEditor } from "@/components/auth/require-role-client";
 import {
   getMediaAssets,
   getMediaStats,
@@ -33,6 +34,14 @@ type ViewMode = "grid" | "list";
 type FilterType = "all" | "image" | "video" | "document";
 
 export default function MediaLibraryPage() {
+  return (
+    <RequireVideoEditor>
+      <MediaLibraryPageContent />
+    </RequireVideoEditor>
+  );
+}
+
+function MediaLibraryPageContent() {
   const [media, setMedia] = useState<MediaAsset[]>([]);
   const [stats, setStats] = useState({
     images: 0,

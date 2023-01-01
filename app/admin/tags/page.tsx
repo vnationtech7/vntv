@@ -10,7 +10,16 @@ import { Input } from "@/components/ui/input";
 import { getTags, deleteTag, bulkCreateTags, type Tag } from "./actions";
 import { Pencil, Trash2, Plus, Tags } from "lucide-react";
 
+import { RequireEditor } from "@/components/auth/require-role-client";
 export default function TagsPage() {
+  return (
+    <RequireEditor>
+      <TagsPageContent />
+    </RequireEditor>
+  );
+}
+
+function TagsPageContent() {
   const [tags, setTags] = useState<Tag[]>([]);
   const [filteredTags, setFilteredTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);

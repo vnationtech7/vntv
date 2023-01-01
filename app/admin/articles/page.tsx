@@ -18,6 +18,7 @@ import {
 import { getMediaAsset, type MediaAsset } from "../media/actions";
 import { Pencil, Trash2, Plus, Image as ImageIcon } from "lucide-react";
 
+import { RequireArticleAccess } from "@/components/auth/require-role-client";
 type ArticleWithImage = Article & {
   featured_image?: MediaAsset | null;
 };
@@ -33,6 +34,14 @@ const STATUS_COLORS: Record<ArticleStatus, string> = {
 };
 
 export default function ArticlesPage() {
+  return (
+    <RequireArticleAccess>
+      <ArticlesPageContent />
+    </RequireArticleAccess>
+  );
+}
+
+function ArticlesPageContent() {
   const router = useRouter();
   const [articles, setArticles] = useState<ArticleWithImage[]>([]);
   const [filteredArticles, setFilteredArticles] = useState<ArticleWithImage[]>([]);

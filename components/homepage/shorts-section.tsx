@@ -1,0 +1,166 @@
+"use client";
+
+import { useState, useRef } from "react";
+import Link from "next/link";
+import { Play, ChevronRight } from "lucide-react";
+import { extractYouTubeId, getYouTubeThumbnail } from "@/lib/utils/youtube";
+
+interface ShortsSectionProps {
+  shorts: Array<{
+    id: string;
+    title: string;
+    slug: string;
+    source_type: string;
+    source_url: string;
+    thumbnail?: { storage_path: string } | null;
+    video_type?: string;
+  }>;
+}
+
+export function ShortsSection({ shorts }: ShortsSectionProps) {
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const videoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
+
+  if (!shorts || shorts.length === 0) {
+    return null;
+  }
+
+  const handleMouseEnter = (id: string) => {
+    setHoveredId(id);
+    const video = videoRefs.current[id];
+    if (video) {
+      video.muted = true;
+      video.play().catch(() => {
+        // Autoplay failed
+      });
+    }
+  };
+
+  const handleMouseLeave = (id: string) => {
+    setHoveredId(null);
+    const video = videoRefs.current[id];
+    if (video) {
+      video.pause();
+      video.currentTime = 0;
+    }
+  };
+
+  const getThumbnail = (short: typeof shorts[0]): string | null => {
+    // Priority 1: Custom thumbnail
+    if (short.thumbnail?.storage_path) {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      return `${supabaseUrl}/storage/v1/object/public/media/${short.thumbnail.storage_path}`;
+    }
+    
+    // Priority 2: YouTube thumbnail
+    if (short.source_type === "youtube" && short.source_url) {
+      const videoId = extractYouTubeId(short.source_url);
+      if (videoId) {
+        return getYouTubeThumbnail(videoId, "hq");
+      }
+    }
+    
+    return null;
+  };
+
+  return (
+    <section className="py-8">
+      {/* Section Header */}
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="flex items-center gap-3 text-base font-extrabold tracking-wide">
+          <span className="w-1 h-4 bg-[--red] rounded-sm" />
+          SHORTS
+        </h2>
+        <Link
+          href="/videos?type=short"
+          className="flex items-center gap-1 text-xs font-bold text-[--muted] hover:text-[--red] transition-colors"
+        >
+          View All
+          <ChevronRight className="w-3.5 h-3.5" />
+        </Link>
+      </div>
+
+      {/* Shorts Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        {shorts.map((short) => {
+          const thumbnailUrl = getThumbnail(short);
+          const isUploadedVideo = short.source_type === "upload" && short.source_url;
+          
+          return (
+            <Link
+              key={short.id}
+              href={`/video/${short.slug}`}
+              className="group block"
+              onMouseEnter={() => handleMouseEnter(short.id)}
+              onMouseLeave={() => handleMouseLeave(short.id)}
+            >
+              <div className="relative aspect-[9/16] overflow-hidden rounded-lg border border-[--border] bg-[--panel] transition-all hover:border-[--red] hover:shadow-lg">
+                {/* Video or Thumbnail */}
+                {isUploadedVideo ? (
+                  <>
+                    {/* Video element for uploaded videos */}
+                    <video
+                      ref={(el) => {
+                        videoRefs.current[short.id] = el;
+                      }}
+                      src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/media/${short.source_url}`}
+                      poster={thumbnailUrl || undefined}
+                      loop
+                      muted
+                      playsInline
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
+                    {/* Poster/Thumbnail overlay (visible when not playing) */}
+                    {hoveredId !== short.id && thumbnailUrl && (
+                      <img
+                        src={thumbnailUrl}
+                        alt={short.title}
+                        className="absolute inset-0 h-full w-full object-cover"
+                      />
+                    )}
+                  </>
+                ) : thumbnailUrl ? (
+                  <img
+                    src={thumbnailUrl}
+                    alt={short.title}
+                    className="absolute inset-0 h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[--panel] to-[--panel-2]">
+                    <Play className="h-12 w-12 text-[--muted-2] opacity-20" />
+                  </div>
+                )}
+
+                {/* Gradient Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+
+                {/* Play Icon (shown when not hovering) */}
+                {hoveredId !== short.id && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-full bg-[--red]/90 flex items-center justify-center">
+                      <Play className="w-6 h-6 text-white ml-0.5" fill="white" />
+                    </div>
+                  </div>
+                )}
+
+                {/* Title */}
+                <div className="absolute bottom-0 left-0 right-0 p-3">
+                  <h3 className="text-xs font-bold text-white line-clamp-2 leading-tight">
+                    {short.title}
+                  </h3>
+                </div>
+
+                {/* Short Badge */}
+                <div className="absolute top-2 left-2">
+                  <span className="inline-block rounded bg-[--red] px-2 py-0.5 text-[10px] font-bold uppercase text-white">
+                    SHORT
+                  </span>
+                </div>
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+    </section>
+  );
+}

@@ -26,6 +26,7 @@ import {
   Activity,
   type LucideIcon,
 } from "lucide-react";
+import { Award } from "lucide-react";
 
 interface NavItem {
   label: string;
@@ -115,9 +116,41 @@ const navigationItems: NavItem[] = [
   },
   {
     label: "Advertising",
-    href: "/admin/advertising",
+    href: "/admin/ads/dashboard",
     icon: SpeakerIcon,
     roles: ["super_admin", "advertising_manager"],
+    children: [
+      {
+        label: "Dashboard",
+        href: "/admin/ads/dashboard",
+        icon: BarChart,
+        roles: ["super_admin", "advertising_manager"],
+      },
+      {
+        label: "Advertisements",
+        href: "/admin/ads",
+        icon: SpeakerIcon,
+        roles: ["super_admin", "advertising_manager"],
+      },
+      {
+        label: "Ad Slots",
+        href: "/admin/ads/slots",
+        icon: Grid,
+        roles: ["super_admin", "advertising_manager"],
+      },
+      {
+        label: "Sponsors",
+        href: "/admin/sponsors",
+        icon: Award,
+        roles: ["super_admin", "advertising_manager"],
+      },
+      {
+        label: "Settings",
+        href: "/admin/ads/settings",
+        icon: Settings,
+        roles: ["super_admin"],
+      },
+    ],
   },
   {
     label: "Analytics",
@@ -173,6 +206,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     if (href === "/admin") {
       return pathname === "/admin";
     }
+    // Special handling for advertising routes
+    if (href.startsWith("/admin/ads")) {
+      return pathname?.startsWith("/admin/ads");
+    }
     return pathname?.startsWith(href);
   };
 
@@ -208,14 +245,14 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       {/* Sidebar */}
       <aside
         className={`
-          fixed inset-y-0 left-0 z-50 w-64 transform border-r border-border bg-background-panel
+          fixed inset-y-0 left-0 z-50 w-64 flex flex-col transform border-r border-border bg-background-panel
           transition-transform duration-300 ease-in-out
           lg:translate-x-0
           ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
         `}
       >
         {/* Logo */}
-        <div className="flex h-16 items-center gap-2 border-b border-border px-6">
+        <div className="flex h-16 items-center gap-2 border-b border-border px-6 flex-shrink-0">
           <Link href="/admin" className="flex items-center gap-2">
             <span className="text-xl font-bold">
               <span className="text-vntv-red">VN</span>
@@ -233,6 +270,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             {visibleNavItems.map((item) => {
               const Icon = item.icon;
               const isActive = isActiveRoute(item.href);
+              const hasChildren = item.children && item.children.length > 0;
 
               return (
                 <li key={item.href}>
@@ -252,6 +290,37 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                     <Icon className="h-5 w-5 shrink-0" />
                     <span>{item.label}</span>
                   </Link>
+
+                  {/* Submenu items */}
+                  {hasChildren && isActive && (
+                    <ul className="mt-1 ml-8 space-y-1">
+                      {item.children.map((child) => {
+                        const ChildIcon = child.icon;
+                        const isChildActive = isActiveRoute(child.href);
+
+                        return (
+                          <li key={child.href}>
+                            <Link
+                              href={child.href}
+                              onClick={() => setSidebarOpen(false)}
+                              className={`
+                                flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium
+                                transition-colors
+                                ${
+                                  isChildActive
+                                    ? "bg-vntv-red/10 text-vntv-red"
+                                    : "text-text-tertiary hover:bg-background-panel-2 hover:text-text-secondary"
+                                }
+                              `}
+                            >
+                              <ChildIcon className="h-4 w-4 shrink-0" />
+                              <span>{child.label}</span>
+                            </Link>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
                 </li>
               );
             })}
@@ -259,7 +328,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         </nav>
 
         {/* User section */}
-        <div className="border-t border-border p-4">
+        <div className="border-t border-border p-4 flex-shrink-0">
           <div className="mb-3 flex items-center gap-3 px-3">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-vntv-red/10 text-sm font-semibold text-vntv-red">
               {userEmail?.[0]?.toUpperCase() || "U"}

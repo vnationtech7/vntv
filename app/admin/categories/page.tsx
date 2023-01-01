@@ -7,6 +7,7 @@ import { DataTable } from "@/components/cms/data-table";
 import { CategoryDialog } from "@/components/cms/category-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { RequireEditor } from "@/components/auth/require-role-client";
 import {
   getCategories,
   deleteCategory,
@@ -15,6 +16,14 @@ import {
 import { Pencil, Trash2, Plus } from "lucide-react";
 
 export default function CategoriesPage() {
+  return (
+    <RequireEditor>
+      <CategoriesPageContent />
+    </RequireEditor>
+  );
+}
+
+function CategoriesPageContent() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);

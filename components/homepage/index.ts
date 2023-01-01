@@ -7,3 +7,6 @@ export { CategoryStrip } from "./category-strip";
 export { OriginalsPromo } from "./originals-promo";
 export { OriginalsSection } from "./originals-section";
 export { EmptyState } from "./empty-state";
+export { HomePageContent } from "./homepage-content";
+export { ShortsSection } from "./shorts-section";
+export { ArticlesSection } from "./articles-section";

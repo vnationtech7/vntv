@@ -276,7 +276,7 @@ export async function getLatestArticles(limit: number = 6) {
       .order("published_at", { ascending: false })
       .limit(limit);
 
-    // Get approved RSS items
+    // Get approved RSS items - ordered by published_at (not fetched_at) to show latest posts
     const { data: rssItems, error: rssError }: { data: any[] | null; error: any } = await supabase
       .from("rss_items")
       .select(`
@@ -291,7 +291,8 @@ export async function getLatestArticles(limit: number = 6) {
         feed:rss_feeds(id, name, source_name, category_id)
       `)
       .eq("status", "approved")
-      .order("fetched_at", { ascending: false })
+      .not("published_at", "is", null)
+      .order("published_at", { ascending: false })
       .limit(limit);
 
     if (articlesError) {
@@ -482,12 +483,13 @@ export async function getLatestVideos(limit: number = 4) {
   const supabase = await createClient();
 
   try {
-    // First get videos
+    // First get videos (excluding shorts)
     const { data: videos, error: videosError }: { data: any[] | null; error: any } = await supabase
       .from("videos")
       .select("id, title, slug, description, source_type, source_url, duration_seconds, view_count, thumbnail_id, video_type")
       .eq("status", "published")
       .not("published_at", "is", null)
+      .neq("video_type", "short") // Exclude shorts
       .order("published_at", { ascending: false })
       .limit(limit);
 
@@ -977,5 +979,116 @@ export async function reorderHomepageItems(items: { id: string; display_order: n
   } catch (err) {
     console.error("Error reordering homepage items:", err);
     return { success: false, error: "Failed to reorder items" };
+  }
+}
+
+/**
+ * Get latest shorts videos for homepage
+ */
+export async function getLatestShorts(limit: number = 6) {
+  const supabase = await createClient();
+
+  try {
+    // Get shorts (video_type = 'short')
+    const { data: shorts, error: shortsError }: { data: any[] | null; error: any } = await supabase
+      .from("videos")
+      .select("id, title, slug, source_type, source_url, thumbnail_id, video_type")
+      .eq("status", "published")
+      .eq("video_type", "short")
+      .not("published_at", "is", null)
+      .order("published_at", { ascending: false })
+      .limit(limit);
+
+    if (shortsError) {
+      console.error("Error fetching shorts:", shortsError);
+      return { data: null, error: shortsError.message || "Failed to fetch shorts" };
+    }
+
+    if (!shorts || shorts.length === 0) {
+      return { data: [], error: null };
+    }
+
+    // Get thumbnails
+    const thumbnailIds = shorts.map(s => s.thumbnail_id).filter(Boolean);
+
+    const thumbnailsResult = thumbnailIds.length > 0
+      ? await supabase.from("media_assets").select("id, storage_path, alt_text").in("id", thumbnailIds)
+      : { data: [], error: null };
+
+    // Map thumbnails
+    const thumbnailsMap = new Map(thumbnailsResult.data?.map((t: any) => [t.id, t]) || []);
+
+    // Combine data
+    const enrichedShorts = shorts.map(short => ({
+      ...short,
+      thumbnail: short.thumbnail_id ? thumbnailsMap.get(short.thumbnail_id) || null : null,
+    }));
+
+    return { data: enrichedShorts, error: null };
+  } catch (err) {
+    console.error("Unexpected error fetching shorts:", err);
+    return { data: null, error: "Failed to fetch shorts" };
+  }
+}
+
+/**
+ * Get latest articles for homepage (published articles only)
+ */
+export async function getLatestPublishedArticles(limit: number = 4) {
+  const supabase = await createClient();
+
+  try {
+    // Get published articles
+    const { data: articles, error: articlesError }: { data: any[] | null; error: any } = await supabase
+      .from("articles")
+      .select("id, title, slug, excerpt, featured_image_id, category_id, author_id, published_at")
+      .eq("status", "published")
+      .not("published_at", "is", null)
+      .order("published_at", { ascending: false })
+      .limit(limit);
+
+    if (articlesError) {
+      console.error("Error fetching articles:", articlesError);
+      return { data: null, error: articlesError.message || "Failed to fetch articles" };
+    }
+
+    if (!articles || articles.length === 0) {
+      return { data: [], error: null };
+    }
+
+    // Get related data
+    const categoryIds = articles.map(a => a.category_id).filter(Boolean);
+    const authorIds = articles.map(a => a.author_id).filter(Boolean);
+    const imageIds = articles.map(a => a.featured_image_id).filter(Boolean);
+
+    const [categoriesResult, authorsResult, imagesResult] = await Promise.all([
+      categoryIds.length > 0
+        ? supabase.from("categories").select("id, name, slug").in("id", categoryIds)
+        : { data: [], error: null },
+      authorIds.length > 0
+        ? supabase.from("authors").select("id, name, slug").in("id", authorIds)
+        : { data: [], error: null },
+      imageIds.length > 0
+        ? supabase.from("media_assets").select("id, storage_path, alt_text").in("id", imageIds)
+        : { data: [], error: null },
+    ]);
+
+    // Map related data
+    const categoriesMap = new Map(categoriesResult.data?.map((c: any) => [c.id, c]) || []);
+    const authorsMap = new Map(authorsResult.data?.map((a: any) => [a.id, a]) || []);
+    const imagesMap = new Map(imagesResult.data?.map((i: any) => [i.id, i]) || []);
+
+    // Combine data
+    const enrichedArticles = articles.map(article => ({
+      ...article,
+      category: article.category_id ? categoriesMap.get(article.category_id) || null : null,
+      author: article.author_id ? authorsMap.get(article.author_id) || null : null,
+      featured_image: article.featured_image_id ? imagesMap.get(article.featured_image_id) || null : null,
+    }));
+
+    return { data: enrichedArticles, error: null };
+  } catch (err) {
+    console.error("Unexpected error fetching articles:", err);
+    return { data: null, error: "Failed to fetch articles" };
   }
 }

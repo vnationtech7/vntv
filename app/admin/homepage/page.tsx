@@ -1,10 +1,14 @@
 import { PageHeader } from "@/components/cms/page-header";
 import { getAllHomepageSections } from "@/app/actions/homepage";
+import { requireEditor } from "@/lib/auth/server-authorization";
 import HomepageSectionsClient from "./homepage-sections-client";
 import Link from "next/link";
 import { Plus, Eye } from "lucide-react";
 
 export default async function HomepageManagementPage() {
+  // Require editor role
+  await requireEditor();
+  
   const { data: sections } = await getAllHomepageSections();
 
   return (

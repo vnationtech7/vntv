@@ -1,10 +1,14 @@
 import { PageHeader } from "@/components/cms/page-header";
 import { getAllBreakingNews } from "@/app/actions/breaking-news";
+import { requireEditor } from "@/lib/auth/server-authorization";
 import BreakingNewsClient from "./breaking-news-client";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 
 export default async function BreakingNewsPage() {
+  // Require editor role
+  await requireEditor();
+  
   const { data: breakingNews } = await getAllBreakingNews();
 
   return (

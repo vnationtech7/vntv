@@ -255,6 +255,8 @@ export async function getRssItems(filters?: {
   status?: "pending" | "approved" | "rejected" | "published";
   limit?: number;
   offset?: number;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
 }) {
   const supabase = await createClient();
 
@@ -264,8 +266,7 @@ export async function getRssItems(filters?: {
       .select(`
         *,
         feed:rss_feeds(id, name, source_name)
-      `)
-      .order("fetched_at", { ascending: false });
+      `);
 
     if (filters?.feedId) {
       query = query.eq("feed_id", filters.feedId);
@@ -274,6 +275,13 @@ export async function getRssItems(filters?: {
     if (filters?.status) {
       query = query.eq("status", filters.status);
     }
+
+    // Apply sorting
+    const sortBy = filters?.sortBy || "fetched_at";
+    const sortOrder = filters?.sortOrder || "desc";
+    const ascending = sortOrder === "asc";
+    
+    query = query.order(sortBy, { ascending });
 
     if (filters?.limit) {
       query = query.limit(filters.limit);
@@ -297,6 +305,42 @@ export async function getRssItems(filters?: {
   } catch (err) {
     console.error("Error fetching RSS items:", err);
     return { data: null, error: "Failed to fetch RSS items" };
+  }
+}
+
+/**
+ * Get RSS items count for pagination
+ */
+export async function getRssItemsCount(filters?: {
+  feedId?: string;
+  status?: "pending" | "approved" | "rejected" | "published";
+}) {
+  const supabase = await createClient();
+
+  try {
+    let query = supabase
+      .from("rss_items")
+      .select("id", { count: "exact", head: true });
+
+    if (filters?.feedId) {
+      query = query.eq("feed_id", filters.feedId);
+    }
+
+    if (filters?.status) {
+      query = query.eq("status", filters.status);
+    }
+
+    const { count, error } = await query;
+
+    if (error) {
+      console.error("Error counting RSS items:", error);
+      return { count: 0, error: error.message };
+    }
+
+    return { count: count || 0, error: null };
+  } catch (err) {
+    console.error("Error counting RSS items:", err);
+    return { count: 0, error: "Failed to count RSS items" };
   }
 }
 

@@ -19,3 +19,4 @@ export { ShareButtons } from "./share-buttons";
 export { ArticleBlockRenderer } from "./article-block-renderer";
 export type { ArticleBlock } from "./article-block-renderer";
 export { ViewTracker } from "./view-tracker";
+export { SponsoredContentBadge } from "./sponsored-content-badge";

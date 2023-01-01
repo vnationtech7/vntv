@@ -2,12 +2,16 @@ import { AdminLayout } from "@/components/cms/admin-layout";
 import { PageHeader } from "@/components/cms/page-header";
 import { Button } from "@/components/ui";
 import { getRssFeeds } from "@/app/actions/rss";
+import { requireEditor } from "@/lib/auth/server-authorization";
 import { Plus, Rss, CheckCircle, XCircle, Clock, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import RssFeedsClient from "./rss-feeds-client";
 
 export default async function RssFeedsPage() {
+  // Require editor role
+  await requireEditor();
+  
   const { data: feeds, error } = await getRssFeeds();
 
   return (

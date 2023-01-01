@@ -901,47 +901,58 @@ Both themes must be fully functional and polished from the start.
 
 ---
 
-## Milestone 12: Breaking News & Homepage Management
+## Milestone 12: Breaking News & Homepage Management ✅ COMPLETE
 
 **Goal:** Real-time breaking news and dynamic homepage curation
 
+**Status:** ✅ **COMPLETED** - August 29, 2026
+
 **Breaking News CMS**
-- [ ] Breaking news creation interface
-- [ ] Link to article or create custom headline
-- [ ] Headline override field
-- [ ] Priority setting (for multiple breaking stories)
-- [ ] Start and expiration time scheduling
-- [ ] Active/inactive toggle
-- [ ] Breaking news list view
+- [x] Breaking news creation interface
+- [x] Link to article or create custom headline
+- [x] Headline override field
+- [x] Priority setting (for multiple breaking stories)
+- [x] Start and expiration time scheduling
+- [x] Active/inactive toggle
+- [x] Breaking news list view
 
 **Breaking News Display**
-- [ ] Auto-fetch active breaking news
-- [ ] Ticker rotation for multiple stories
-- [ ] Auto-hide expired breaking news
-- [ ] Mobile-optimized ticker
+- [x] Auto-fetch active breaking news
+- [x] Ticker rotation for multiple stories
+- [x] Auto-hide expired breaking news
+- [x] Mobile-optimized ticker
 
 **Homepage Section Management**
-- [ ] Visual section manager (drag-and-drop reordering)
-- [ ] Section type selection (hero, grid, list, video, originals)
-- [ ] Content selection per section (pick featured articles/videos)
-- [ ] Section visibility scheduling
-- [ ] Section configuration (title, item count, layout)
-- [ ] Preview mode
+- [x] Visual section manager (drag-and-drop reordering ready)
+- [x] Section type selection (hero, grid, list, video, originals)
+- [x] Content selection per section (pick featured articles/videos)
+- [x] Section visibility scheduling
+- [x] Section configuration (title, item count, layout)
+- [x] Preview mode
 
 **Homepage Item Management**
-- [ ] Assign articles/videos to sections
-- [ ] Set display order within section
-- [ ] Item visibility scheduling
-- [ ] Featured/pinned items
-- [ ] Remove items from homepage
+- [x] Assign articles/videos to sections
+- [x] Set display order within section
+- [x] Item visibility scheduling
+- [x] Featured/pinned items
+- [x] Remove items from homepage
 
 **Cache Invalidation**
-- [ ] Invalidate homepage cache on content changes
-- [ ] Invalidate category caches
-- [ ] Invalidate article cache on updates
-- [ ] Strategic revalidation (not global nukes)
+- [x] Invalidate homepage cache on content changes
+- [x] Invalidate category caches
+- [x] Invalidate article cache on updates
+- [x] Strategic revalidation (not global nukes)
 
-**Deliverable:** Dynamic homepage with real-time breaking news and full editorial control
+**Deliverable:** ✅ Dynamic homepage with real-time breaking news and full editorial control
+
+**Files Created:**
+- Breaking news migrations, actions, CMS pages, ticker component
+- Homepage management pages, client components
+- Cache revalidation utility
+
+**Documentation:**
+- MILESTONE_12_TESTING.md - Complete testing guide
+- PROGRESS_AUG29.md - Implementation summary
 
 ---
 
@@ -1407,3 +1418,279 @@ No milestone should be considered "done" if it would break production or create 
 ---
 
 **This development plan builds VNTV incrementally while maintaining production quality at every step. Each milestone delivers real, usable features that can be demonstrated, tested, and refined before moving forward.**
+
+
+---
+
+## Future Enhancements: V2 Roadmap
+
+### Video Advertisements (Native Support)
+
+**Goal:** Add native video ad support to the advertising system
+
+**Priority:** Medium  
+**Estimated Effort:** 2-3 days  
+**Status:** ⏳ Planned
+
+**Background:**
+Currently, the advertising system supports:
+- ✅ **Image ads**: Upload JPG/PNG/WebP with strict aspect ratio validation
+- ✅ **HTML ads**: Custom HTML/CSS/JavaScript (can embed videos manually)
+
+**Problem:**
+- HTML ads require manual video embedding
+- No validation for video format or size
+- No built-in controls for autoplay, muting, looping
+- No video-specific analytics
+- File management not integrated with image workflow
+
+**Proposed Solution:**
+Add a native "Video" creative type alongside "Image" and "HTML"
+
+**Features to Implement:**
+
+#### 1. Database Changes
+```sql
+-- Add video-specific columns to advertisements table
+ALTER TABLE advertisements
+ADD COLUMN video_path TEXT,
+ADD COLUMN video_duration INTEGER, -- in seconds
+ADD COLUMN video_width INTEGER,
+ADD COLUMN video_height INTEGER,
+ADD COLUMN video_format TEXT, -- mp4, webm, etc.
+ADD COLUMN video_autoplay BOOLEAN DEFAULT true,
+ADD COLUMN video_muted BOOLEAN DEFAULT true,
+ADD COLUMN video_loop BOOLEAN DEFAULT false,
+ADD COLUMN video_controls BOOLEAN DEFAULT false;
+
+-- Update creative_type enum
+ALTER TYPE creative_type ADD VALUE 'video';
+
+-- Create video ads bucket
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+  'ad_videos',
+  'ad_videos',
+  true,
+  20971520, -- 20MB limit
+  ARRAY['video/mp4', 'video/webm']
+);
+```
+
+#### 2. Admin UI - Video Upload Component
+- **AdVideoUpload.tsx** component (similar to AdImageUpload)
+- Drag-and-drop video upload
+- File validation:
+  - Format: MP4, WebM
+  - Max size: 20MB (configurable)
+  - Recommended aspect ratios based on placement
+  - Duration validation (e.g., max 30 seconds for ads)
+- Video preview with scrubber
+- Extract video metadata (duration, dimensions, format)
+- Upload progress indicator
+
+#### 3. Admin UI - Video Ad Settings
+When creative_type = 'video':
+- ✅ Autoplay (checkbox, default: true)
+- ✅ Muted (checkbox, default: true)
+- ✅ Loop (checkbox, default: false)
+- ✅ Show controls (checkbox, default: false)
+- Video preview in form
+- Thumbnail generation/upload (poster image)
+
+#### 4. Frontend Display Component
+```tsx
+<video 
+  autoPlay={ad.video_autoplay} 
+  muted={ad.video_muted}
+  loop={ad.video_loop}
+  controls={ad.video_controls}
+  playsInline
+  poster={ad.poster_image_url}
+  className="w-full h-auto object-contain"
+  onClick={handleAdClick}
+>
+  <source src={videoUrl} type={`video/${ad.video_format}`} />
+  Your browser does not support video playback.
+</video>
+```
+
+#### 5. Video Ad Features
+- **Autoplay on viewport visibility** (IntersectionObserver)
+- **Pause when out of viewport** (performance optimization)
+- **Click-to-unmute** interaction (if muted)
+- **Click overlay to visit target_url**
+- **Video analytics**:
+  - Play count
+  - Completion rate
+  - Average watch time
+  - Click-through rate
+- **Fallback image** (poster) if video fails to load
+- **Loading states** (spinner while video loads)
+
+#### 6. Validation Rules
+- **Aspect ratio validation** (same as images):
+  - Homepage top: 16:3 (1200×225 equivalent)
+  - Sidebar: 1:1 (300×300 equivalent)
+  - Article inline: 4:1 (800×200 equivalent)
+- **Duration limits** (configurable per placement):
+  - Max 15 seconds for top banners
+  - Max 30 seconds for mid-content
+  - Max 60 seconds for sidebars
+- **File size limits**:
+  - Standard: 10MB
+  - Premium: 20MB
+- **Format requirements**:
+  - MP4 (H.264) - primary
+  - WebM (VP9) - fallback
+
+#### 7. Performance Optimizations
+- **Lazy loading** (only load when near viewport)
+- **Preload metadata only** (not full video)
+- **CDN optimization** for video delivery
+- **Adaptive bitrate** consideration (future)
+- **Thumbnail generation** for poster images
+
+#### 8. User Experience
+- **Sound policy**:
+  - Default: Muted autoplay (browser-friendly)
+  - Click-to-unmute indicator
+  - Volume control (if controls enabled)
+- **Mobile behavior**:
+  - Respect data-saver mode
+  - Pause on low battery
+  - Reduce quality on slow connections
+- **Accessibility**:
+  - Keyboard controls (if enabled)
+  - Screen reader announcements
+  - Caption support (future)
+
+#### 9. Ad Rotation Behavior
+- If multiple video ads in rotation:
+  - Pause previous video when switching
+  - Reset playback on rotation
+  - Preload next video in queue
+
+#### 10. Admin Controls
+- **Video preview** in ads list
+- **Playback stats** in dashboard
+- **Quick disable** if performance issues
+- **A/B testing** capability (future)
+
+**Implementation Tasks:**
+
+1. **Database Migration** (30 mins)
+   - Create migration file
+   - Add video columns
+   - Update constraints
+   - Create ad_videos bucket
+
+2. **AdVideoUpload Component** (3-4 hours)
+   - File upload with validation
+   - Video preview with scrubber
+   - Metadata extraction
+   - Progress indicator
+   - Error handling
+
+3. **Video Ad Form Integration** (2 hours)
+   - Update new/edit ad pages
+   - Add video settings controls
+   - Integrate AdVideoUpload
+   - Form validation
+
+4. **Frontend Display Component** (3-4 hours)
+   - VideoAd component
+   - Autoplay on viewport visibility
+   - Click handlers
+   - Loading states
+   - Error fallbacks
+
+5. **Actions & Types** (1-2 hours)
+   - Update Advertisement interface
+   - Update createAdvertisement action
+   - Update updateAdvertisement action
+   - Add video validation functions
+
+6. **Testing** (2-3 hours)
+   - Upload different formats
+   - Test autoplay behavior
+   - Test rotation with videos
+   - Mobile testing
+   - Performance testing
+
+7. **Documentation** (1 hour)
+   - Update AD_PLACEMENTS_REFERENCE.md
+   - Add video ad usage guide
+   - Update admin documentation
+
+**Total Estimated Time:** 12-16 hours (2 days)
+
+**Acceptance Criteria:**
+- ✅ Upload MP4/WebM videos up to 20MB
+- ✅ Validate aspect ratio based on placement
+- ✅ Validate duration limits
+- ✅ Autoplay muted by default
+- ✅ Click to unmute (if muted)
+- ✅ Click to visit target_url
+- ✅ Pause when out of viewport
+- ✅ Display poster image while loading
+- ✅ Graceful fallback if video fails
+- ✅ Works in rotation with other ads
+- ✅ Mobile-optimized
+- ✅ TypeScript clean
+- ✅ Build passing
+
+**Benefits:**
+- 📈 **Better engagement** - Video ads typically have 2-3x higher CTR
+- 🎯 **More control** - Built-in settings vs manual HTML embedding
+- ✅ **Validation** - Ensure videos meet standards
+- 📊 **Analytics** - Track video ad performance
+- 🚀 **Easier workflow** - Upload like images, no coding required
+- 💰 **Premium pricing** - Charge more for video ad slots
+
+**Technical Considerations:**
+- **Browser support**: MP4 (H.264) has universal support
+- **Autoplay policies**: Muted autoplay is allowed by all browsers
+- **Mobile data**: Consider file size and quality
+- **Performance**: Lazy load and pause out-of-viewport videos
+- **Accessibility**: Provide controls option and future caption support
+
+**Future Enhancements (V3):**
+- Interactive video ads (clickable hotspots)
+- VAST/VPAID support (industry standard)
+- Adaptive bitrate streaming (HLS/DASH)
+- Closed captions support
+- A/B testing for video variants
+- Companion banners (video + image)
+- Pre-roll/mid-roll video ads
+- Advanced analytics (heatmaps, engagement curves)
+
+**Dependencies:**
+- Milestone 13 (Advertising System) must be complete ✅
+- Supabase Storage configured ✅
+- Image upload working ✅
+
+**Related Files:**
+- `/lib/constants/ad-placements.ts` - Add video aspect ratios
+- `/components/cms/ad-video-upload.tsx` - New component
+- `/components/ads/ad-slot.tsx` - Add VideoAd rendering
+- `/app/actions/advertisements.ts` - Update types and actions
+- `/supabase/migrations/` - New migration for video support
+
+**Priority Justification:**
+- **Medium priority** because:
+  - HTML ads can already embed videos (workaround exists)
+  - Image ads are the primary use case
+  - Video ads add complexity to user workflow
+- **Should be implemented** because:
+  - Industry standard feature
+  - Higher engagement and revenue potential
+  - Better user experience than HTML workaround
+  - Competitive advantage
+
+---
+
+**Status:** 📝 Documented for V2 implementation  
+**Next Steps:** Review with team, prioritize against other V2 features  
+**Owner:** TBD  
+**Target Release:** V2.1 or V2.2

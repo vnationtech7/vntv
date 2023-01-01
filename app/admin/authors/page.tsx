@@ -11,7 +11,16 @@ import { Input } from "@/components/ui/input";
 import { getAuthors, deleteAuthor, type Author } from "./actions";
 import { Pencil, Trash2, Plus, ExternalLink } from "lucide-react";
 
+import { RequireEditor } from "@/components/auth/require-role-client";
 export default function AuthorsPage() {
+  return (
+    <RequireEditor>
+      <AuthorsPageContent />
+    </RequireEditor>
+  );
+}
+
+function AuthorsPageContent() {
   const [authors, setAuthors] = useState<Author[]>([]);
   const [filteredAuthors, setFilteredAuthors] = useState<Author[]>([]);
   const [loading, setLoading] = useState(true);

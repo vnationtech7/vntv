@@ -1,4 +1,6 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { AdminLayout } from "@/components/cms/admin-layout";
 import { PageHeader } from "@/components/cms/page-header";
 import { RssFeedForm } from "@/components/cms/rss-feed-form";
@@ -26,6 +28,16 @@ export default async function EditRssFeedPage({ params }: EditRssFeedPageProps) 
 
   return (
     <AdminLayout>
+      <div className="mb-4">
+        <Link
+          href="/admin/rss"
+          className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to RSS Feeds
+        </Link>
+      </div>
+      
       <PageHeader
         title={`Edit RSS Feed: ${feed.name}`}
         description="Update RSS feed configuration"

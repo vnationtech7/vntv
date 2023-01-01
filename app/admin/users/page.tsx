@@ -1,7 +1,6 @@
-import { redirect } from "next/navigation";
 import { Container } from "@/components/layout/container";
 import { UserList } from "@/components/admin/user-list";
-import { isAdmin } from "../roles/actions";
+import { requireSuperAdmin } from "@/lib/auth/server-authorization";
 
 export const metadata = {
   title: "User Management - VNTV Admin",
@@ -9,12 +8,8 @@ export const metadata = {
 };
 
 export default async function UsersPage() {
-  // Check if user is admin
-  const userIsAdmin = await isAdmin();
-
-  if (!userIsAdmin) {
-    redirect("/");
-  }
+  // Require super admin role
+  await requireSuperAdmin();
 
   return (
     <Container className="py-8">

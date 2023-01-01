@@ -22,9 +22,18 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+import { RequireVideoEditor } from "@/components/auth/require-role-client";
 type FilterStatus = "all" | "draft" | "published";
 
 export default function VideosPage() {
+  return (
+    <RequireVideoEditor>
+      <VideosPageContent />
+    </RequireVideoEditor>
+  );
+}
+
+function VideosPageContent() {
   const [videos, setVideos] = useState<Video[]>([]);
   const [stats, setStats] = useState({
     total: 0,

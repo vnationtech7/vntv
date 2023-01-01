@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { 
   RssItem, 
@@ -18,6 +18,9 @@ import {
   RefreshCw,
   Trash2,
   RotateCcw,
+  ChevronLeft,
+  ChevronRight,
+  ArrowUpDown,
 } from "lucide-react";
 import RssItemPreviewModal from "./rss-item-preview-modal";
 
@@ -26,6 +29,11 @@ interface RssItemsClientProps {
   feeds: RssFeed[];
   initialStatus?: string;
   initialFeedId?: string;
+  currentPage: number;
+  totalPages: number;
+  totalCount: number;
+  sortBy: string;
+  sortOrder: string;
 }
 
 export default function RssItemsClient({
@@ -33,6 +41,11 @@ export default function RssItemsClient({
   feeds,
   initialStatus,
   initialFeedId,
+  currentPage,
+  totalPages,
+  totalCount,
+  sortBy: initialSortBy,
+  sortOrder: initialSortOrder,
 }: RssItemsClientProps) {
   const router = useRouter();
   const [items, setItems] = useState(initialItems);
@@ -41,9 +54,17 @@ export default function RssItemsClient({
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Filter states
+  // Filter and sort states
   const [statusFilter, setStatusFilter] = useState(initialStatus || "");
   const [feedFilter, setFeedFilter] = useState(initialFeedId || "");
+  const [sortBy, setSortBy] = useState(initialSortBy);
+  const [sortOrder, setSortOrder] = useState(initialSortOrder);
+
+  // Sync items when initialItems changes (after filtering/pagination)
+  useEffect(() => {
+    setItems(initialItems);
+    setSelectedItems(new Set()); // Clear selections on new data
+  }, [initialItems]);
 
   const handleStatusChange = async (itemId: string, newStatus: "approved" | "rejected" | "pending") => {
     setIsProcessing(true);
@@ -209,6 +230,30 @@ export default function RssItemsClient({
     const params = new URLSearchParams();
     if (statusFilter) params.set("status", statusFilter);
     if (feedFilter) params.set("feedId", feedFilter);
+    if (sortBy) params.set("sortBy", sortBy);
+    if (sortOrder) params.set("sortOrder", sortOrder);
+    params.set("page", "1"); // Reset to page 1 when filtering
+    router.push(`/admin/rss/items?${params.toString()}`);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    const params = new URLSearchParams();
+    if (statusFilter) params.set("status", statusFilter);
+    if (feedFilter) params.set("feedId", feedFilter);
+    if (sortBy) params.set("sortBy", sortBy);
+    if (sortOrder) params.set("sortOrder", sortOrder);
+    params.set("page", newPage.toString());
+    router.push(`/admin/rss/items?${params.toString()}`);
+  };
+
+  const handleSortChange = (column: string) => {
+    const newSortOrder = sortBy === column && sortOrder === "desc" ? "asc" : "desc";
+    const params = new URLSearchParams();
+    if (statusFilter) params.set("status", statusFilter);
+    if (feedFilter) params.set("feedId", feedFilter);
+    params.set("sortBy", column);
+    params.set("sortOrder", newSortOrder);
+    params.set("page", "1");
     router.push(`/admin/rss/items?${params.toString()}`);
   };
 
@@ -352,7 +397,13 @@ export default function RssItemsClient({
                   />
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">
-                  Title
+                  <button
+                    onClick={() => handleSortChange("title")}
+                    className="flex items-center gap-1 hover:text-red-600"
+                  >
+                    Title
+                    <ArrowUpDown className="w-3 h-3" />
+                  </button>
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">
                   Feed
@@ -361,7 +412,13 @@ export default function RssItemsClient({
                   Status
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">
-                  Fetched
+                  <button
+                    onClick={() => handleSortChange("published_at")}
+                    className="flex items-center gap-1 hover:text-red-600"
+                  >
+                    Published
+                    <ArrowUpDown className="w-3 h-3" />
+                  </button>
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">
                   Actions
@@ -423,7 +480,9 @@ export default function RssItemsClient({
                     </td>
                     <td className="px-4 py-3">
                       <span className="text-sm text-gray-600">
-                        {new Date(item.fetched_at).toLocaleDateString()}
+                        {item.published_at
+                          ? new Date(item.published_at).toLocaleDateString()
+                          : new Date(item.fetched_at).toLocaleDateString()}
                       </span>
                     </td>
                     <td className="px-4 py-3">
@@ -491,6 +550,64 @@ export default function RssItemsClient({
           </table>
         </div>
       </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="mt-6 flex items-center justify-between">
+          <div className="text-sm text-gray-600">
+            Showing page {currentPage} of {totalPages} ({totalCount} total items)
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              Previous
+            </button>
+            
+            {/* Page Numbers */}
+            <div className="flex items-center gap-1">
+              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                let pageNum;
+                if (totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+                
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => handlePageChange(pageNum)}
+                    className={`px-3 py-2 rounded-lg transition-colors ${
+                      currentPage === pageNum
+                        ? "bg-red-600 text-white"
+                        : "border border-gray-300 hover:bg-gray-50"
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              Next
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Preview Modal */}
       {showPreview && selectedItem && (

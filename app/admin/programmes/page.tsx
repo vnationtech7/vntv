@@ -2,11 +2,15 @@ import { AdminLayout } from "@/components/cms/admin-layout";
 import { PageHeader } from "@/components/cms/page-header";
 import { Button } from "@/components/ui";
 import { getAllProgrammes } from "@/app/actions/programme";
+import { requireVideoEditor } from "@/lib/auth/server-authorization";
 import { Plus, Edit, Trash2, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 
 export default async function ProgrammesPage() {
+  // Require video editor role
+  await requireVideoEditor();
+  
   const { data: programmes, error } = await getAllProgrammes();
 
   return (

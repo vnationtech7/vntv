@@ -1,7 +1,7 @@
 // @ts-nocheck
-import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { requireAnyStaffRole } from "@/lib/auth/server-authorization";
 import { AdminLayout } from "@/components/cms/admin-layout";
 import { Card } from "@/components/ui/card";
 import {
@@ -22,16 +22,10 @@ export const metadata = {
 };
 
 export default async function AdminDashboard() {
+  // Require any staff role to access dashboard
+  await requireAnyStaffRole();
+
   const supabase = await createClient();
-
-  // Check authentication
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/");
-  }
 
   // Fetch dashboard stats
   const [articlesResult, categoriesResult, tagsResult, authorsResult] =

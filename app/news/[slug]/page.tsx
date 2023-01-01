@@ -2,7 +2,8 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PublicLayout } from "@/components/layout/public-layout";
 import { getArticle, getSuggestedArticles } from "@/app/actions/article";
-import { ArticleCard, ShareButtons, ArticleBlockRenderer, ViewTracker } from "@/components/content";
+import { ArticleCard, ShareButtons, ArticleBlockRenderer, ViewTracker, SponsoredContentBadge } from "@/components/content";
+import { ArticleTopBanner, ArticleInline, ArticleSidebar } from "@/components/ads";
 import { formatDistanceToNow } from "date-fns";
 import type { Metadata } from "next";
 
@@ -167,6 +168,9 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Article Content */}
           <article className="lg:col-span-2">
+            {/* Article Top Banner Ad */}
+            <ArticleTopBanner />
+
             {/* Category Badge */}
             {article.category && (
               <div className="mb-4">
@@ -206,6 +210,12 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
                   <span className="font-bold text-vntv-red">EXCLUSIVE</span>
                 </>
               )}
+              {article.is_sponsored && (
+                <>
+                  <span>•</span>
+                  <SponsoredContentBadge label={article.sponsor_label} />
+                </>
+              )}
             </div>
 
             {/* Featured Image */}
@@ -228,15 +238,20 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
               </div>
             )}
 
-            {/* Sponsor Label */}
+            {/* Sponsor Label - Banner Style */}
             {article.is_sponsored && article.sponsor_label && (
-              <div className="mb-6 rounded-lg border border-border bg-background-panel p-4 text-sm text-text-secondary">
-                {article.sponsor_label}
-              </div>
+              <SponsoredContentBadge
+                label={article.sponsor_label}
+                variant="banner"
+                className="mb-6"
+              />
             )}
 
             {/* Body Content */}
             <ArticleBlockRenderer blocks={article.body || []} />
+
+            {/* Inline Ad (Mid-Content) */}
+            <ArticleInline />
 
             {/* Social Sharing */}
             <div className="mt-12 pt-8 border-t border-border">
@@ -283,11 +298,15 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
 
           {/* Sidebar - Suggested Articles */}
           <aside className="lg:col-span-1">
-            <div className="sticky top-4">
-              <h2 className="flex items-center gap-3 text-base font-extrabold tracking-wide mb-6">
-                <span className="w-1 h-4 bg-vntv-red rounded-sm" />
-                RELATED STORIES
-              </h2>
+            <div className="sticky top-4 space-y-6">
+              {/* Sidebar Ad */}
+              <ArticleSidebar />
+
+              <div>
+                <h2 className="flex items-center gap-3 text-base font-extrabold tracking-wide mb-6">
+                  <span className="w-1 h-4 bg-vntv-red rounded-sm" />
+                  RELATED STORIES
+                </h2>
 
               {suggestedArticles && suggestedArticles.length > 0 ? (
                 <div className="space-y-6">
@@ -311,6 +330,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
               ) : (
                 <p className="text-text-secondary text-sm">No related stories available.</p>
               )}
+              </div>
             </div>
           </aside>
         </div>

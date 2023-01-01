@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Play, Pause, Volume2, VolumeX, Video } from "lucide-react";
+import { extractYouTubeId, getYouTubeThumbnail } from "@/lib/utils/youtube";
 import type { FeaturedContent } from "@/app/actions/homepage";
 
 interface HeroSectionProps {
@@ -72,15 +73,6 @@ export function HeroSection({ content }: HeroSectionProps) {
     return url;
   };
 
-  const getYouTubeThumbnail = (url: string | undefined) => {
-    if (!url) return null;
-    const videoIdMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/);
-    if (videoIdMatch) {
-      return `https://img.youtube.com/vi/${videoIdMatch[1]}/maxresdefault.jpg`;
-    }
-    return null;
-  };
-
   const getTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -105,8 +97,11 @@ export function HeroSection({ content }: HeroSectionProps) {
 
   const imageUrl = currentItem.featured_image?.storage_path
     ? getImageUrl(currentItem.featured_image.storage_path)
-    : currentItem.content_type === 'video' && currentItem.source_type === 'youtube'
-    ? getYouTubeThumbnail(currentItem.source_url)
+    : currentItem.content_type === 'video' && currentItem.source_type === 'youtube' && currentItem.source_url
+    ? (() => {
+        const videoId = extractYouTubeId(currentItem.source_url);
+        return videoId ? getYouTubeThumbnail(videoId, "maxres") : null;
+      })()
     : null;
 
   console.log("Current item:", currentItem);
@@ -309,8 +304,11 @@ export function HeroSection({ content }: HeroSectionProps) {
             {sidebarItems.slice(0, 3).map((item) => {
               const itemImageUrl = item.featured_image?.storage_path
                 ? getImageUrl(item.featured_image.storage_path)
-                : item.content_type === 'video' && item.source_type === 'youtube'
-                ? getYouTubeThumbnail(item.source_url)
+                : item.content_type === 'video' && item.source_type === 'youtube' && item.source_url
+                ? (() => {
+                    const videoId = extractYouTubeId(item.source_url);
+                    return videoId ? getYouTubeThumbnail(videoId, "hq") : null;
+                  })()
                 : null;
               const itemIsVideo = item.content_type === 'video';
 
