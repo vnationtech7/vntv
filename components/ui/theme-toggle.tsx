@@ -1,6 +1,7 @@
 "use client";
 
 import { useTheme } from "@/lib/theme/theme-provider";
+import { Sun, Moon, Monitor } from "@/components/icons";
 
 export function ThemeToggle() {
   const { resolvedTheme, toggleTheme } = useTheme();
@@ -13,37 +14,24 @@ export function ThemeToggle() {
       type="button"
     >
       {/* Sun icon (visible in dark mode) */}
-      <svg
+      <Sun
         className={`absolute w-5 h-5 transition-all duration-base ${
           resolvedTheme === "dark"
             ? "rotate-0 scale-100 opacity-100"
             : "rotate-90 scale-0 opacity-0"
         }`}
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        strokeWidth={2}
         aria-hidden="true"
-      >
-        <circle cx="12" cy="12" r="4" />
-        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
-      </svg>
+      />
 
       {/* Moon icon (visible in light mode) */}
-      <svg
+      <Moon
         className={`absolute w-5 h-5 transition-all duration-base ${
           resolvedTheme === "light"
             ? "rotate-0 scale-100 opacity-100"
             : "-rotate-90 scale-0 opacity-0"
         }`}
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        strokeWidth={2}
         aria-hidden="true"
-      >
-        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-      </svg>
+      />
     </button>
   );
 }
@@ -60,17 +48,12 @@ export function ThemeToggleCompact() {
     >
       {resolvedTheme === "dark" ? (
         <>
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <circle cx="12" cy="12" r="4" />
-            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
-          </svg>
+          <Sun className="w-4 h-4" />
           <span>Light</span>
         </>
       ) : (
         <>
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-          </svg>
+          <Moon className="w-4 h-4" />
           <span>Dark</span>
         </>
       )}
@@ -90,10 +73,7 @@ export function ThemeToggleDropdown() {
         }`}
         type="button"
       >
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <circle cx="12" cy="12" r="4" />
-          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
-        </svg>
+        <Sun className="w-4 h-4" />
         <span>Light</span>
       </button>
       
@@ -104,9 +84,7 @@ export function ThemeToggleDropdown() {
         }`}
         type="button"
       >
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-        </svg>
+        <Moon className="w-4 h-4" />
         <span>Dark</span>
       </button>
       
@@ -117,10 +95,7 @@ export function ThemeToggleDropdown() {
         }`}
         type="button"
       >
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <rect x="2" y="3" width="20" height="14" rx="2" />
-          <path d="M8 21h8M12 17v4" />
-        </svg>
+        <Monitor className="w-4 h-4" />
         <span>System {theme === "system" && `(${resolvedTheme})`}</span>
       </button>
     </div>
