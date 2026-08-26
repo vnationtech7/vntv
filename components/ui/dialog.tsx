@@ -93,8 +93,11 @@ export function DialogTrigger({ children, onClick, asChild, ...props }: DialogTr
     } as any);
   }
 
+  // Remove asChild from props passed to button
+  const { asChild: _, ...buttonProps } = props as any;
+
   return (
-    <button onClick={handleClick} {...props}>
+    <button onClick={handleClick} {...buttonProps}>
       {children}
     </button>
   );
@@ -248,8 +251,11 @@ export function DialogClose({ children, onClick, asChild, ...props }: DialogClos
     } as any);
   }
 
+  // Remove asChild from props passed to button
+  const { asChild: _, ...buttonProps } = props as any;
+
   return (
-    <button onClick={handleClick} {...props}>
+    <button onClick={handleClick} {...buttonProps}>
       {children}
     </button>
   );
