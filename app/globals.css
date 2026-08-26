@@ -1,0 +1,48 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* VNTV Dark Theme Colors */
+  --vn-bg: #0b0b0d;
+  --vn-panel: #141417;
+  --vn-panel-2: #1b1b1f;
+  --vn-border: #2a2a2f;
+  --vn-red: #e0142c;
+  --vn-red-dim: #8a0f1e;
+  --vn-text: #f2f2f3;
+  --vn-muted: #9a9aa2;
+  --vn-muted-2: #6f6f78;
+}
+
+.light {
+  /* VNTV Light Theme Colors (to be refined in Milestone 2) */
+  --vn-bg: #ffffff;
+  --vn-panel: #f8f8f9;
+  --vn-panel-2: #f0f0f2;
+  --vn-border: #e1e1e6;
+  --vn-red: #e0142c;
+  --vn-red-dim: #b01023;
+  --vn-text: #0d0d0f;
+  --vn-muted: #52525a;
+  --vn-muted-2: #737380;
+}
+
+@layer base {
+  * {
+    @apply border-vn-border;
+  }
+  
+  body {
+    @apply bg-vn-bg text-vn-text;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}

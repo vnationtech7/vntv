@@ -1,0 +1,40 @@
+{
+  "name": "vntv",
+  "version": "1.0.0",
+  "description": "VNTV is a modern, mobile-first African news and video platform built for digital journalism, editorial publishing, original programming, video distribution, and scalable newsroom operations.",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "type-check": "tsc --noEmit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vnationtech7/vntv.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/vnationtech7/vntv/issues"
+  },
+  "homepage": "https://github.com/vnationtech7/vntv#readme",
+  "dependencies": {
+    "@supabase/auth-helpers-nextjs": "^0.15.0",
+    "@supabase/ssr": "^0.12.5",
+    "@supabase/supabase-js": "^2.109.0",
+    "@types/node": "^26.3.0",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.5",
+    "autoprefixer": "^10.5.4",
+    "next": "^16.3.3",
+    "postcss": "^8.5.26",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^7.0.2"
+  }
+}
