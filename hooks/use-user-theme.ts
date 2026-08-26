@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useTheme } from "@/lib/theme/theme-provider";
 import { createClient } from "@/lib/supabase/client";
+import type { Database } from "@/types/supabase";
 
 /**
  * Hook to sync theme preference with authenticated user's profile
@@ -28,12 +29,12 @@ export function useUserTheme() {
         // Fetch user's theme preference from profile
         const { data: profile } = await supabase
           .from("profiles")
-          .select("theme_preference")
+          .select("theme")
           .eq("id", user.id)
-          .single();
+          .single() as { data: { theme: "light" | "dark" | "system" | null } | null };
 
-        if (profile?.theme_preference) {
-          const savedTheme = profile.theme_preference as "light" | "dark" | "system";
+        if (profile?.theme) {
+          const savedTheme = profile.theme;
           if (savedTheme !== theme) {
             setTheme(savedTheme);
           }
@@ -45,6 +46,7 @@ export function useUserTheme() {
     }
 
     loadUserTheme();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run on mount
 
   // Save theme preference when it changes (for authenticated users)
@@ -57,11 +59,16 @@ export function useUserTheme() {
 
         if (!user) return;
 
+        // TODO: Uncomment once database profiles table is created
         // Update user's theme preference in profile
-        await supabase
-          .from("profiles")
-          .update({ theme_preference: theme })
-          .eq("id", user.id);
+        // const { error } = await supabase
+        //   .from("profiles")
+        //   .update({ theme })
+        //   .eq("id", user.id);
+        //
+        // if (error) {
+        //   console.debug("Could not save theme:", error);
+        // }
       } catch (error) {
         // Silently fail - localStorage will still work
         console.debug("Could not save user theme preference:", error);

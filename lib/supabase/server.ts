@@ -1,16 +1,20 @@
+/**
+ * Supabase Client for Server Components
+ * 
+ * Use this in server components, server actions, and route handlers.
+ * This client reads and writes cookies for session management.
+ */
+
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import type { Database } from "@/types/supabase";
 
-/**
- * Create a Supabase client for use in Server Components, Server Actions, and Route Handlers
- * Uses the new publishable key format (sb_publishable_xxx)
- */
 export async function createClient() {
   const cookieStore = await cookies();
 
-  return createServerClient(
+  return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         getAll() {
@@ -18,36 +22,14 @@ export async function createClient() {
         },
         setAll(cookiesToSet) {
           try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            );
-          } catch {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              cookieStore.set(name, value, options);
+            });
+          } catch (error) {
             // The `setAll` method was called from a Server Component.
             // This can be ignored if you have middleware refreshing
             // user sessions.
           }
-        },
-      },
-    }
-  );
-}
-
-/**
- * Create a Supabase admin client with elevated privileges (bypasses RLS)
- * Uses the new secret key format (sb_secret_xxx)
- * ⚠️ Only use in server-side code where you need admin access
- */
-export function createAdminClient() {
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SECRET_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return [];
-        },
-        setAll() {
-          // Admin client doesn't need cookies
         },
       },
     }
