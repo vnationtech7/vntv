@@ -3,18 +3,10 @@ import { cn } from "@/lib/utils";
 
 export interface CardProps extends HTMLAttributes<HTMLDivElement> {
   hover?: boolean;
-  padding?: "none" | "sm" | "md" | "lg";
 }
 
 const Card = forwardRef<HTMLDivElement, CardProps>(
-  ({ className, hover = false, padding = "md", children, ...props }, ref) => {
-    const paddingStyles = {
-      none: "",
-      sm: "p-4",
-      md: "p-6",
-      lg: "p-8",
-    };
-
+  ({ className, hover = false, children, ...props }, ref) => {
     return (
       <div
         ref={ref}
@@ -22,7 +14,6 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
           "bg-[--color-background-panel] border border-[--color-border] rounded-md overflow-hidden",
           "transition-all duration-200",
           hover && "hover:border-[--color-foreground-muted] hover:shadow-md",
-          paddingStyles[padding],
           className
         )}
         {...props}
@@ -40,7 +31,7 @@ const CardHeader = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
     return (
       <div
         ref={ref}
-        className={cn("flex flex-col gap-1.5", className)}
+        className={cn("flex flex-col gap-1.5 p-6 pb-4", className)}
         {...props}
       >
         {children}
@@ -88,7 +79,7 @@ CardDescription.displayName = "CardDescription";
 const CardContent = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
   ({ className, children, ...props }, ref) => {
     return (
-      <div ref={ref} className={cn("", className)} {...props}>
+      <div ref={ref} className={cn("px-6 pb-6", className)} {...props}>
         {children}
       </div>
     );
@@ -102,7 +93,7 @@ const CardFooter = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
     return (
       <div
         ref={ref}
-        className={cn("flex items-center gap-2", className)}
+        className={cn("flex items-center gap-2 px-6 pb-6", className)}
         {...props}
       >
         {children}

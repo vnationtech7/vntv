@@ -449,7 +449,7 @@ function CardShowcase() {
         </CardContent>
       </Card>
 
-      <Card padding="lg">
+      <Card className="p-8">
         <Badge variant="primary" className="mb-3">FEATURED</Badge>
         <CardTitle className="mb-2">Featured Content</CardTitle>
         <p className="text-body-sm text-[--color-foreground-muted]">
