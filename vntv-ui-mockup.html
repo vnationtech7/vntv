@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VNTV — Africa. Our Stories. Our Way.</title>
+<style>
+  :root{
+    --bg:#0b0b0d;
+    --panel:#141417;
+    --panel-2:#1b1b1f;
+    --border:#2a2a2f;
+    --red:#e0142c;
+    --red-dim:#8a0f1e;
+    --text:#f2f2f3;
+    --muted:#9a9aa2;
+    --muted-2:#6f6f78;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;text-decoration:none;}
+  img{display:block;max-width:100%;}
+  .wrap{max-width:1280px;margin:0 auto;padding:0 24px;}
+
+  /* HEADER */
+  header.site{border-bottom:1px solid var(--border);background:var(--bg);position:sticky;top:0;z-index:50;}
+  .topbar{display:flex;align-items:center;gap:24px;padding:16px 0;}
+  .menu-icon{font-size:20px;cursor:pointer;color:var(--muted);}
+  .logo{display:flex;flex-direction:column;line-height:1;}
+  .logo .word{font-size:26px;font-weight:800;letter-spacing:1px;}
+  .logo .word span{color:var(--red);}
+  .logo .tag{font-size:9px;letter-spacing:2px;color:var(--muted);margin-top:2px;}
+  .search{flex:1;display:flex;max-width:420px;margin-left:16px;}
+  .search input{
+    flex:1;background:var(--panel);border:1px solid var(--border);border-right:none;
+    color:var(--text);padding:10px 14px;border-radius:6px 0 0 6px;font-size:13px;
+  }
+  .search button{
+    background:var(--panel);border:1px solid var(--border);border-left:none;
+    color:var(--muted);padding:0 14px;border-radius:0 6px 6px 0;cursor:pointer;
+  }
+  .top-right{display:flex;align-items:center;gap:16px;margin-left:auto;}
+  .social{display:flex;gap:14px;color:var(--muted);font-size:15px;}
+  .social a:hover{color:var(--text);}
+  .login-btn{
+    display:flex;align-items:center;gap:6px;border:1px solid var(--red);color:var(--red);
+    padding:8px 16px;border-radius:20px;font-size:12px;font-weight:700;letter-spacing:.5px;
+    cursor:pointer;
+  }
+  .login-btn:hover{background:var(--red);color:#fff;}
+
+  nav.main{border-top:1px solid var(--border);}
+  nav.main ul{display:flex;list-style:none;overflow-x:auto;}
+  nav.main li{flex:none;}
+  nav.main a{
+    display:flex;align-items:center;gap:6px;padding:12px 18px;font-size:12px;font-weight:700;
+    letter-spacing:.5px;color:var(--muted);white-space:nowrap;border-bottom:2px solid transparent;
+  }
+  nav.main li.active a{color:var(--red);border-bottom-color:var(--red);background:rgba(224,20,44,.08);}
+  nav.main a:hover{color:var(--text);}
+
+  /* BREAKING BAR */
+  .breaking{background:var(--panel);border-bottom:1px solid var(--border);}
+  .breaking .wrap{display:flex;align-items:center;gap:16px;padding:10px 24px;}
+  .breaking-badge{
+    background:rgba(224,20,44,.15);color:var(--red);font-size:11px;font-weight:800;
+    letter-spacing:1px;padding:5px 10px;border-radius:4px;flex:none;
+  }
+  .breaking-text{font-size:13px;color:var(--text);flex:1;}
+  .breaking-time{color:var(--red);font-size:12px;margin-left:8px;}
+  .breaking-nav{display:flex;gap:8px;color:var(--muted);}
+  .breaking-nav span{cursor:pointer;}
+
+  section{padding:32px 0;}
+  .section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+  .section-head h2{
+    font-size:15px;font-weight:800;letter-spacing:.5px;display:flex;align-items:center;gap:8px;
+  }
+  .section-head h2::before{content:'';width:4px;height:16px;background:var(--red);display:inline-block;border-radius:2px;}
+  .view-all{font-size:11px;font-weight:700;color:var(--muted);display:flex;align-items:center;gap:4px;}
+  .view-all:hover{color:var(--red);}
+
+  /* HERO */
+  .hero-grid{display:grid;grid-template-columns:2fr 1fr;gap:20px;}
+  .hero-main{position:relative;border-radius:10px;overflow:hidden;background:var(--panel);min-height:440px;}
+  .hero-main img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+  .hero-main .scrim{
+    position:absolute;inset:0;background:linear-gradient(0deg, rgba(0,0,0,.92) 10%, rgba(0,0,0,.35) 55%, rgba(0,0,0,.05) 100%);
+  }
+  .hero-content{position:relative;z-index:2;height:100%;display:flex;flex-direction:column;justify-content:flex-end;padding:32px;}
+  .top-story-badge{
+    background:var(--red);color:#fff;font-size:11px;font-weight:800;letter-spacing:1px;
+    padding:6px 12px;border-radius:4px;display:inline-block;margin-bottom:16px;width:fit-content;
+  }
+  .hero-content h1{font-size:34px;line-height:1.2;font-weight:800;max-width:640px;margin-bottom:14px;}
+  .hero-content p{color:#d6d6da;font-size:14px;max-width:560px;margin-bottom:16px;line-height:1.5;}
+  .byline{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-bottom:20px;flex-wrap:wrap;}
+  .byline img{width:26px;height:26px;border-radius:50%;object-fit:cover;}
+  .byline .dot{color:var(--muted-2);}
+  .read-more{
+    display:inline-flex;align-items:center;gap:8px;background:var(--red);color:#fff;font-size:12px;
+    font-weight:800;letter-spacing:.5px;padding:12px 20px;border-radius:6px;width:fit-content;
+  }
+  .read-more:hover{background:#c11026;}
+  .hero-dots{position:absolute;bottom:24px;right:32px;z-index:3;display:flex;gap:6px;}
+  .hero-dots span{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.35);}
+  .hero-dots span.active{background:var(--red);width:22px;border-radius:4px;}
+
+  .hero-side{display:flex;flex-direction:column;gap:20px;}
+  .side-card{
+    background:var(--panel);border-radius:10px;overflow:hidden;display:flex;flex-direction:column;
+    border:1px solid var(--border);flex:1;
+  }
+  .side-card .thumb{position:relative;aspect-ratio:16/9;background:#000;}
+  .side-card .thumb img{width:100%;height:100%;object-fit:cover;opacity:.85;}
+  .play-btn{
+    position:absolute;inset:0;margin:auto;width:46px;height:46px;border-radius:50%;
+    background:rgba(0,0,0,.45);border:2px solid rgba(255,255,255,.8);display:flex;align-items:center;
+    justify-content:center;color:#fff;font-size:16px;
+  }
+  .side-card .body{padding:16px;}
+  .cat-tag{font-size:10px;font-weight:800;letter-spacing:1px;color:var(--red);margin-bottom:8px;display:block;}
+  .side-card h3{font-size:15px;font-weight:700;line-height:1.35;margin-bottom:8px;}
+  .side-card .date{font-size:11px;color:var(--muted-2);}
+
+  /* GRID CARD (latest news) */
+  .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;}
+  .news-card{background:var(--panel);border-radius:10px;overflow:hidden;border:1px solid var(--border);}
+  .news-card .thumb{position:relative;aspect-ratio:4/3;}
+  .news-card .thumb img{width:100%;height:100%;object-fit:cover;}
+  .icon-badge{
+    position:absolute;top:10px;left:10px;width:26px;height:26px;border-radius:6px;background:var(--red);
+    display:flex;align-items:center;justify-content:center;font-size:13px;
+  }
+  .news-card .body{padding:14px;}
+  .news-card h3{font-size:14px;font-weight:700;line-height:1.4;margin:8px 0;}
+  .news-card .date{font-size:11px;color:var(--muted-2);}
+
+  /* MAIN 2-COL: latest+trending share row, video+beyond share row */
+  .cols-2{display:grid;grid-template-columns:2.4fr 1fr;gap:24px;align-items:start;}
+
+  /* TRENDING */
+  .trending-panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:8px 20px;}
+  .trend-item{display:flex;gap:14px;align-items:flex-start;padding:16px 0;border-bottom:1px solid var(--border);}
+  .trend-item:last-child{border-bottom:none;}
+  .trend-num{font-size:20px;font-weight:800;color:var(--red-dim);width:28px;flex:none;}
+  .trend-body h4{font-size:13px;font-weight:700;line-height:1.4;margin-bottom:6px;}
+  .trend-meta{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted-2);}
+  .trend-arrow{margin-left:auto;font-size:13px;}
+  .trend-arrow.up{color:#2fbf6f;}
+  .trend-arrow.down{color:var(--red);}
+
+  /* VIDEO ROW */
+  .video-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;}
+  .video-card{background:var(--panel);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+  .video-card .thumb{position:relative;aspect-ratio:16/10;background:#000;}
+  .video-card .thumb img{width:100%;height:100%;object-fit:cover;opacity:.85;}
+  .duration{
+    position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.75);color:#fff;font-size:11px;
+    padding:2px 6px;border-radius:4px;
+  }
+  .video-card .body{padding:12px 14px;}
+  .video-card h4{font-size:13px;font-weight:700;line-height:1.4;margin-bottom:6px;}
+  .video-card .date{font-size:11px;color:var(--muted-2);}
+
+  .originals-card{
+    background:linear-gradient(160deg,#1c0d10,#0b0b0d 60%);border:1px solid var(--border);
+    border-radius:10px;overflow:hidden;position:relative;min-height:100%;display:flex;flex-direction:column;
+    justify-content:flex-end;padding:24px;
+  }
+  .originals-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.35;z-index:0;}
+  .originals-card .scrim2{position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.9),rgba(0,0,0,.2));z-index:1;}
+  .originals-content{position:relative;z-index:2;}
+  .originals-label{font-size:11px;font-weight:800;letter-spacing:2px;color:var(--muted);margin-bottom:10px;}
+  .originals-label span{color:var(--red);}
+  .originals-card h3{font-size:24px;font-weight:800;line-height:1.15;margin-bottom:10px;}
+  .originals-card p{font-size:12px;color:var(--muted);margin-bottom:16px;}
+  .watch-btn{
+    display:inline-flex;align-items:center;gap:8px;background:var(--red);color:#fff;font-size:12px;
+    font-weight:800;padding:10px 18px;border-radius:6px;width:fit-content;
+  }
+
+  /* CATEGORY STRIP */
+  .cat-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:16px;}
+  .cat-box{
+    border-radius:10px;padding:22px 16px;text-align:center;border:1px solid var(--border);
+    background:var(--panel);transition:transform .15s ease;
+  }
+  .cat-box:hover{transform:translateY(-3px);}
+  .cat-icon{
+    width:48px;height:48px;border-radius:50%;margin:0 auto 12px;display:flex;align-items:center;
+    justify-content:center;font-size:20px;border:2px solid currentColor;
+  }
+  .cat-box h4{font-size:13px;font-weight:800;margin-bottom:6px;}
+  .cat-box p{font-size:10.5px;color:var(--muted-2);line-height:1.4;}
+  .c-ghana{color:#e0142c;} .c-nigeria{color:#f2a900;} .c-africa{color:#2fbf6f;}
+  .c-world{color:#2ba8e0;} .c-politics{color:#8a6ff2;} .c-business{color:#f24f6f;}
+  .c-ent{color:#e04fbf;} .c-sports{color:#5c6bf2;}
+
+  /* NEWSLETTER */
+  .newsletter{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:28px 32px;display:flex;align-items:center;gap:24px;}
+  .nl-icon{
+    width:56px;height:56px;border-radius:50%;background:rgba(224,20,44,.12);border:2px solid var(--red);
+    color:var(--red);display:flex;align-items:center;justify-content:center;font-size:22px;flex:none;
+  }
+  .nl-text h3{font-size:15px;font-weight:800;margin-bottom:4px;}
+  .nl-text p{font-size:12px;color:var(--muted);}
+  .nl-form{display:flex;gap:0;margin-left:auto;flex:none;}
+  .nl-form input{
+    background:var(--panel-2);border:1px solid var(--border);border-right:none;color:var(--text);
+    padding:12px 16px;border-radius:6px 0 0 6px;font-size:13px;width:260px;
+  }
+  .nl-form button{
+    background:var(--red);color:#fff;border:none;padding:0 22px;border-radius:0 6px 6px 0;
+    font-size:12px;font-weight:800;letter-spacing:.5px;cursor:pointer;
+  }
+  .nl-fine{font-size:10px;color:var(--muted-2);margin-top:8px;}
+  .nl-left{max-width:340px;}
+
+  /* FOOTER */
+  footer{border-top:1px solid var(--border);padding-top:40px;margin-top:16px;}
+  .footer-grid{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr 1fr;gap:24px;padding-bottom:32px;}
+  .footer-col h5{font-size:12px;font-weight:800;letter-spacing:1px;color:var(--muted);margin-bottom:16px;}
+  .footer-col a{display:block;font-size:13px;color:var(--muted);margin-bottom:12px;}
+  .footer-col a:hover{color:var(--text);}
+  .footer-brand .logo{margin-bottom:14px;}
+  .footer-bottom{
+    border-top:1px solid var(--border);padding:20px 0;display:flex;justify-content:space-between;
+    align-items:center;font-size:12px;color:var(--muted-2);
+  }
+  .back-top{display:flex;align-items:center;gap:6px;color:var(--muted-2);}
+
+  @media (max-width:1100px){
+    .hero-grid{grid-template-columns:1fr;}
+    .grid-4,.video-grid,.cat-grid{grid-template-columns:repeat(2,1fr);}
+    .cols-2{grid-template-columns:1fr;}
+    .footer-grid{grid-template-columns:repeat(2,1fr);}
+    .nl-form input{width:180px;}
+    .newsletter{flex-wrap:wrap;}
+  }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap topbar">
+    <div class="menu-icon">☰</div>
+    <div class="logo">
+      <div class="word">VN<span>TV</span></div>
+      <div class="tag">AFRICA. OUR STORIES. OUR WAY.</div>
+    </div>
+    <div class="search">
+      <input type="text" placeholder="Search for news, videos, topics...">
+      <button>🔍</button>
+    </div>
+    <div class="top-right">
+      <div class="social">
+        <a href="#">f</a><a href="#">𝕏</a><a href="#">▶</a><a href="#">◎</a><a href="#">♪</a>
+      </div>
+      <div class="login-btn">👤 LOGIN</div>
+    </div>
+  </div>
+  <nav class="main">
+    <div class="wrap">
+      <ul>
+        <li class="active"><a href="#">🏠 HOME</a></li>
+        <li><a href="#">🇬🇭 GHANA</a></li>
+        <li><a href="#">🇳🇬 NIGERIA</a></li>
+        <li><a href="#">🌍 AFRICA</a></li>
+        <li><a href="#">🌐 WORLD</a></li>
+        <li><a href="#">🏛 POLITICS</a></li>
+        <li><a href="#">💼 BUSINESS</a></li>
+        <li><a href="#">🎭 ENTERTAINMENT</a></li>
+        <li><a href="#">⚽ SPORTS</a></li>
+        <li><a href="#">💬 OPINION</a></li>
+        <li><a href="#">MORE ▾</a></li>
+      </ul>
+    </div>
+  </nav>
+</header>
+
+<div class="breaking">
+  <div class="wrap">
+    <span class="breaking-badge">⚡ BREAKING ⚡</span>
+    <span class="breaking-text">Parliament passes 2024 budget amid heated debate <span class="breaking-time">2m ago</span></span>
+    <div class="breaking-nav"><span>‹</span><span>›</span></div>
+  </div>
+</div>
+
+<main class="wrap">
+
+  <!-- HERO -->
+  <section style="padding-bottom:16px;">
+    <div class="hero-grid">
+      <div class="hero-main">
+        <img src="https://picsum.photos/seed/ghanaskyline/1000/700" alt="Ghana skyline">
+        <div class="scrim"></div>
+        <div class="hero-content">
+          <span class="top-story-badge">TOP STORY</span>
+          <h1>Ghana's economy grows 4.7% in Q1 2024, driven by services sector</h1>
+          <p>The Ghana Statistical Service says the economy recorded strong growth in the first quarter, led by ICT and financial services.</p>
+          <div class="byline">
+            <img src="https://i.pravatar.cc/60?img=47" alt="Marian Mensah">
+            <span>By Marian Mensah</span><span class="dot">•</span>
+            <span>📅 May 22, 2024</span><span class="dot">•</span>
+            <span>🕐 5 min read</span>
+          </div>
+          <a href="#" class="read-more">READ FULL STORY →</a>
+        </div>
+        <div class="hero-dots">
+          <span class="active"></span><span></span><span></span><span></span><span></span>
+        </div>
+      </div>
+
+      <div class="hero-side">
+        <a class="side-card" href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank">
+          <div class="thumb">
+            <img src="https://picsum.photos/seed/parliament2024/500/300" alt="Parliament">
+            <div class="play-btn">▶</div>
+          </div>
+          <div class="body">
+            <span class="cat-tag">POLITICS</span>
+            <h3>Parliament passes 2024 budget amid heated debate</h3>
+            <span class="date">May 22, 2024</span>
+          </div>
+        </a>
+        <a class="side-card" href="https://www.youtube.com/watch?v=eIho2S0ZahI" target="_blank">
+          <div class="thumb">
+            <img src="https://picsum.photos/seed/sudancrisis/500/300" alt="Sudan crisis">
+            <div class="play-btn">▶</div>
+          </div>
+          <div class="body">
+            <span class="cat-tag">AFRICA</span>
+            <h3>AU calls for urgent ceasefire in Sudan as crisis deepens</h3>
+            <span class="date">May 22, 2024</span>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- LATEST NEWS -->
+  <section>
+    <div class="section-head">
+      <h2>LATEST NEWS</h2>
+      <a class="view-all" href="#">VIEW ALL →</a>
+    </div>
+    <div class="grid-4">
+      <div class="news-card">
+        <div class="thumb">
+          <img src="https://picsum.photos/seed/ecgtower/400/300" alt="ECG towers">
+          <div class="icon-badge">🏛</div>
+        </div>
+        <div class="body">
+          <span class="cat-tag" style="color:#f2a900;">GHANA</span>
+          <h3>ECG announces new tariffs effective June 1</h3>
+          <span class="date">May 22, 2024</span>
+        </div>
+      </div>
+      <div class="news-card">
+        <div class="thumb">
+          <img src="https://picsum.photos/seed/dangoterefinery/400/300" alt="Dangote refinery">
+          <div class="icon-badge">🏛</div>
+        </div>
+        <div class="body">
+          <span class="cat-tag" style="color:#2fbf6f;">NIGERIA</span>
+          <h3>Dangote refinery reduces petrol price by 7%</h3>
+          <span class="date">May 22, 2024</span>
+        </div>
+      </div>
+      <div class="news-card">
+        <div class="thumb">
+          <img src="https://picsum.photos/seed/bidenaid/400/300" alt="Biden signs aid package">
+          <div class="icon-badge">🏛</div>
+        </div>
+        <div class="body">
+          <span class="cat-tag" style="color:#2ba8e0;">WORLD</span>
+          <h3>Biden signs $95B aid package for Ukraine and allies</h3>
+          <span class="date">May 22, 2024</span>
+        </div>
+      </div>
+      <div class="news-card">
+        <div class="thumb">
+          <img src="https://picsum.photos/seed/ghanaport/400/300" alt="Ghana port">
+          <div class="icon-badge">🏛</div>
+        </div>
+        <div class="body">
+          <span class="cat-tag" style="color:#f24f6f;">BUSINESS</span>
+          <h3>Ghana records $2.1B trade surplus in Q1 2024</h3>
+          <span class="date">May 22, 2024</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRENDING NOW (own row to mirror layout, aligned right of a spacer) -->
+  <section style="padding-top:0;">
+    <div class="cols-2">
+      <div></div>
+      <div>
+        <div class="section-head">
+          <h2>TRENDING NOW</h2>
+          <a class="view-all" href="#">VIEW ALL →</a>
+        </div>
+        <div class="trending-panel">
+          <div class="trend-item">
+            <span class="trend-num">01</span>
+            <div class="trend-body">
+              <h4>Parliament passes 2024 budget amid heated debate</h4>
+              <div class="trend-meta">🕐 2m ago <span class="trend-arrow up">↗</span></div>
+            </div>
+          </div>
+          <div class="trend-item">
+            <span class="trend-num">02</span>
+            <div class="trend-body">
+              <h4>Video: Massive fire guts market in Kumasi</h4>
+              <div class="trend-meta">🕐 3h ago <span class="trend-arrow up">↗</span></div>
+            </div>
+          </div>
+          <div class="trend-item">
+            <span class="trend-num">03</span>
+            <div class="trend-body">
+              <h4>Black Stars player Thomas Partey cleared to return</h4>
+              <div class="trend-meta">🕐 4h ago <span class="trend-arrow up">↗</span></div>
+            </div>
+          </div>
+          <div class="trend-item">
+            <span class="trend-num">04</span>
+            <div class="trend-body">
+              <h4>Fuel prices to remain stable – NPA assures Ghanaians</h4>
+              <div class="trend-meta">🕐 5h ago <span class="trend-arrow up">↗</span></div>
+            </div>
+          </div>
+          <div class="trend-item">
+            <span class="trend-num">05</span>
+            <div class="trend-body">
+              <h4>Davido announces new album release date</h4>
+              <div class="trend-meta">🕐 6h ago <span class="trend-arrow up">↗</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VNTV VIDEO -->
+  <section style="padding-top:0;">
+    <div class="cols-2">
+      <div>
+        <div class="section-head">
+          <h2>VNTV VIDEO</h2>
+          <a class="view-all" href="#">VIEW ALL →</a>
+        </div>
+        <div class="video-grid">
+          <a class="video-card" href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank">
+            <div class="thumb">
+              <img src="https://picsum.photos/seed/dopinionafrica/400/260" alt="D'Opinion">
+              <div class="play-btn">▶</div>
+              <span class="duration">12:45</span>
+            </div>
+            <div class="body">
+              <h4>D'Opinion: Is Africa ready for the digital revolution?</h4>
+              <span class="date">May 21, 2024</span>
+            </div>
+          </a>
+          <a class="video-card" href="https://www.youtube.com/watch?v=eIho2S0ZahI" target="_blank">
+            <div class="thumb">
+              <img src="https://picsum.photos/seed/youthunemployment/400/260" alt="Beyond Headlines">
+              <div class="play-btn">▶</div>
+              <span class="duration">8:30</span>
+            </div>
+            <div class="body">
+              <h4>Beyond Headlines: The truth about youth unemployment</h4>
+              <span class="date">May 20, 2024</span>
+            </div>
+          </a>
+          <a class="video-card" href="https://www.youtube.com/watch?v=jNQXAC9IVRw" target="_blank">
+            <div class="thumb">
+              <img src="https://picsum.photos/seed/realestateghana/400/260" alt="Real estate market">
+              <div class="play-btn">▶</div>
+              <span class="duration">15:22</span>
+            </div>
+            <div class="body">
+              <h4>Inside Ghana's booming real estate market</h4>
+              <span class="date">May 20, 2024</span>
+            </div>
+          </a>
+          <a class="video-card" href="https://www.youtube.com/watch?v=M7lc1UVf-VE" target="_blank">
+            <div class="thumb">
+              <img src="https://picsum.photos/seed/heartsofoak/400/260" alt="Hearts of Oak match">
+              <div class="play-btn">▶</div>
+              <span class="duration">6:18</span>
+            </div>
+            <div class="body">
+              <h4>Highlights: Hearts of Oak 2-1 Asante Kotoko</h4>
+              <span class="date">May 19, 2024</span>
+            </div>
+          </a>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-head" style="visibility:hidden;"><h2>spacer</h2></div>
+        <div class="originals-card">
+          <img src="https://picsum.photos/seed/beyondheadlineshost/500/700" alt="Beyond Headlines host">
+          <div class="scrim2"></div>
+          <div class="originals-content">
+            <div class="originals-label">VN<span>TV</span> ORIGINALS</div>
+            <h3>BEYOND<br>HEADLINES</h3>
+            <p>New episode every Friday</p>
+            <a class="watch-btn" href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank">WATCH NOW →</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CATEGORY STRIP -->
+  <section>
+    <div class="cat-grid">
+      <div class="cat-box c-ghana"><div class="cat-icon">🇬🇭</div><h4 style="color:var(--text);">Ghana</h4><p>Latest updates and stories from Ghana</p></div>
+      <div class="cat-box c-nigeria"><div class="cat-icon">🇳🇬</div><h4 style="color:var(--text);">Nigeria</h4><p>Breaking news across Nigeria</p></div>
+      <div class="cat-box c-africa"><div class="cat-icon">🌍</div><h4 style="color:var(--text);">Africa</h4><p>Top stories from across the continent</p></div>
+      <div class="cat-box c-world"><div class="cat-icon">🌐</div><h4 style="color:var(--text);">World</h4><p>Global news and international stories</p></div>
+      <div class="cat-box c-politics"><div class="cat-icon">🏛</div><h4 style="color:var(--text);">Politics</h4><p>Policy, elections and political updates</p></div>
+      <div class="cat-box c-business"><div class="cat-icon">📈</div><h4 style="color:var(--text);">Business</h4><p>Markets, economy and companies</p></div>
+      <div class="cat-box c-ent"><div class="cat-icon">🎭</div><h4 style="color:var(--text);">Entertainment</h4><p>Celebrities, movies and more</p></div>
+      <div class="cat-box c-sports"><div class="cat-icon">⚽</div><h4 style="color:var(--text);">Sports</h4><p>Football, athletics and sports news</p></div>
+    </div>
+  </section>
+
+  <!-- NEWSLETTER -->
+  <section style="padding-top:0;">
+    <div class="newsletter">
+      <div class="nl-icon">✉</div>
+      <div class="nl-text nl-left">
+        <h3>STAY INFORMED</h3>
+        <p>Get the best of VNTV in your inbox daily.</p>
+      </div>
+      <div>
+        <div class="nl-form">
+          <input type="email" placeholder="Enter your email address">
+          <button>SUBSCRIBE</button>
+        </div>
+        <div class="nl-fine">By subscribing, you agree to our Privacy Policy.</div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-grid">
+      <div class="footer-col footer-brand">
+        <div class="logo"><div class="word">VN<span>TV</span></div></div>
+      </div>
+      <div class="footer-col">
+        <h5>EXPLORE</h5>
+        <a href="#">Ghana</a><a href="#">Nigeria</a><a href="#">Africa</a>
+        <a href="#">World</a><a href="#">Politics</a><a href="#">Business</a>
+        <a href="#">Entertainment</a><a href="#">Sports</a><a href="#">Viral</a>
+      </div>
+      <div class="footer-col">
+        <h5>ABOUT</h5>
+        <a href="#">About Us</a><a href="#">Our Team</a><a href="#">Careers</a>
+        <a href="#">Advertise With Us</a><a href="#">Contact Us</a>
+        <a href="#">Terms of Use</a><a href="#">Privacy Policy</a>
+      </div>
+      <div class="footer-col">
+        <h5>SUPPORT</h5>
+        <a href="#">FAQ</a><a href="#">Help Center</a><a href="#">News Tips</a><a href="#">Corrections</a>
+      </div>
+      <div class="footer-col">
+        <h5>MORE FROM VNTV</h5>
+        <a href="#">VNTV Originals</a><a href="#">D'Opinion</a>
+        <a href="#">Beyond Headlines</a><a href="#">Documentaries</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="word" style="font-size:16px;font-weight:800;">VN<span style="color:var(--red);">TV</span></div>
+      <div>© 2024 VNTV. All rights reserved.</div>
+      <div class="back-top">Back to top ⌃</div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
