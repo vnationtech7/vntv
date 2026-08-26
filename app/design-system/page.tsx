@@ -70,7 +70,7 @@ export default function DesignSystemPage() {
             <HStack justify="between" align="center" className="mb-6">
               <div>
                 <h1 className="text-hero mb-2">
-                  VN<span className="text-[--color-vntv-red]">TV</span> Design System
+                  <span className="text-[--color-vntv-red]">VN</span>TV Design System
                 </h1>
                 <p className="text-[13px] text-[--color-foreground-muted]">
                   Complete component library in <span className="font-bold">{resolvedTheme}</span> theme
@@ -299,6 +299,14 @@ function TypographyShowcase() {
 }
 
 function SpacingShowcase() {
+  const spacingSizes = [
+    { name: "xs", width: 20 },
+    { name: "sm", width: 40 },
+    { name: "md", width: 60 },
+    { name: "lg", width: 80 },
+    { name: "xl", width: 100 },
+  ];
+
   return (
     <Card>
       <CardHeader>
@@ -306,10 +314,13 @@ function SpacingShowcase() {
       </CardHeader>
       <CardContent>
         <VStack gap="md">
-          {["xs", "sm", "md", "lg", "xl"].map((size) => (
-            <div key={size}>
-              <div className="text-[12px] font-bold mb-1">gap-{size}</div>
-              <div className="h-2 bg-[--color-vntv-red] rounded" style={{ width: `${["xs", "sm", "md", "lg", "xl"].indexOf(size) + 1 * 20}%` }} />
+          {spacingSizes.map((size) => (
+            <div key={size.name}>
+              <div className="text-[12px] font-bold mb-1">gap-{size.name}</div>
+              <div 
+                className="h-2 bg-[--color-vntv-red] rounded" 
+                style={{ width: `${size.width}%` }} 
+              />
             </div>
           ))}
         </VStack>

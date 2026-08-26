@@ -18,7 +18,7 @@ export default function Home() {
         {/* VNTV Logo */}
         <div className="space-y-2">
           <h1 className="text-6xl font-extrabold tracking-tight">
-            VN<span className="text-vntv-red">TV</span>
+            <span className="text-vntv-red">VN</span>TV
           </h1>
           <p className="text-xs tracking-[0.2em] text-foreground-muted uppercase">
             Africa. Our Stories. Our Way.
