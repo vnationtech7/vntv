@@ -1,72 +1,87 @@
+"use client";
+
+import { ThemeToggle, ThemeToggleCompact } from "@/components/ui/theme-toggle";
+import { useTheme } from "@/lib/theme/theme-provider";
+
 export default function Home() {
+  const { resolvedTheme } = useTheme();
+
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center p-8">
+    <main id="main-content" className="min-h-screen flex flex-col items-center justify-center p-8">
       <div className="max-w-4xl w-full space-y-8 text-center">
+        {/* Theme Toggle - Top Right */}
+        <div className="fixed top-6 right-6 z-10 flex items-center gap-3">
+          <ThemeToggleCompact />
+          <ThemeToggle />
+        </div>
+
         {/* VNTV Logo */}
         <div className="space-y-2">
           <h1 className="text-6xl font-extrabold tracking-tight">
-            VN<span className="text-vn-red">TV</span>
+            VN<span className="text-vntv-red">TV</span>
           </h1>
-          <p className="text-xs tracking-[0.2em] text-vn-muted uppercase">
+          <p className="text-xs tracking-[0.2em] text-foreground-muted uppercase">
             Africa. Our Stories. Our Way.
           </p>
         </div>
 
         {/* Status Card */}
-        <div className="bg-vn-panel border border-vn-border rounded-vn p-8 space-y-6">
+        <div className="bg-background-panel border border-border rounded-md p-8 space-y-6">
           <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-vntv-red-light text-vntv-red text-caption-sm font-extrabold uppercase rounded-xs mb-3">
+              <span>⚡</span>
+              <span>Milestone 2 In Progress</span>
+            </div>
             <h2 className="text-2xl font-bold">
-              🚀 Milestone 1: Foundation
+              Design System & Core UI
             </h2>
-            <p className="text-vn-muted">
-              Setting up the VNTV platform foundation
+            <p className="text-foreground-muted">
+              Building the reusable design foundation with {resolvedTheme} theme
             </p>
           </div>
 
           <div className="grid gap-4 text-left">
             <ChecklistItem completed>
-              Next.js 14+ with App Router
+              ✅ Design tokens (colors, typography, spacing)
             </ChecklistItem>
             <ChecklistItem completed>
-              TypeScript with strict mode
+              ✅ Theme system with provider & toggle
             </ChecklistItem>
             <ChecklistItem completed>
-              Tailwind CSS with VNTV brand colors
+              ✅ Light/Dark theme switching
             </ChecklistItem>
             <ChecklistItem completed>
-              Supabase client utilities (new publishable/secret keys)
+              ✅ System preference detection
             </ChecklistItem>
             <ChecklistItem completed>
-              Project folder structure
-            </ChecklistItem>
-            <ChecklistItem completed>
-              Complete database schema migration
-            </ChecklistItem>
-            <ChecklistItem completed>
-              Row Level Security (RLS) policies
+              ✅ Theme persistence (localStorage)
             </ChecklistItem>
             <ChecklistItem>
-              Supabase project connection
+              Base UI components (Button, Input, Card, etc.)
             </ChecklistItem>
             <ChecklistItem>
-              Google OAuth configuration
+              Layout components (Container, Grid, Stack)
             </ChecklistItem>
             <ChecklistItem>
-              Type generation from database
+              Icon system
+            </ChecklistItem>
+            <ChecklistItem>
+              Accessibility foundation
             </ChecklistItem>
           </div>
 
-          <div className="pt-4 border-t border-vn-border space-y-2">
-            <p className="text-sm text-vn-muted-2">
-              Next steps:
+          <div className="pt-4 border-t border-border space-y-3">
+            <p className="text-sm font-bold text-foreground">
+              🎨 Theme System Features:
             </p>
-            <ol className="text-sm text-vn-muted space-y-1 text-left list-decimal list-inside">
-              <li>Create Supabase project and get API keys</li>
-              <li>Set up environment variables in .env.local</li>
-              <li>Apply database migrations</li>
-              <li>Configure Supabase Auth with Google OAuth</li>
-              <li>Create first super admin user</li>
-            </ol>
+            <ul className="text-sm text-foreground-muted space-y-1 text-left">
+              <li>• Smooth transitions between themes</li>
+              <li>• No flash of unstyled content (FOUC)</li>
+              <li>• Respects system preferences</li>
+              <li>• Persists across sessions</li>
+              <li>• Three theme toggle variants</li>
+              <li>• Will sync with user profile when authenticated</li>
+            </ul>
           </div>
         </div>
 
@@ -74,21 +89,21 @@ export default function Home() {
         <div className="flex gap-4 justify-center text-sm">
           <a
             href="/Blueprint.md"
-            className="text-vn-red hover:text-vn-red-dim transition-colors"
+            className="text-vntv-red hover:text-vntv-red-hover transition-colors"
           >
-            Technical Blueprint →
-          </a>
-          <a
-            href="/Product_spec.md"
-            className="text-vn-red hover:text-vn-red-dim transition-colors"
-          >
-            Product Spec →
+            Blueprint →
           </a>
           <a
             href="/milestones.md"
-            className="text-vn-red hover:text-vn-red-dim transition-colors"
+            className="text-vntv-red hover:text-vntv-red-hover transition-colors"
           >
             Milestones →
+          </a>
+          <a
+            href="/MILESTONE_1_STATUS.md"
+            className="text-vntv-red hover:text-vntv-red-hover transition-colors"
+          >
+            M1 Status →
           </a>
         </div>
       </div>
@@ -106,10 +121,10 @@ function ChecklistItem({
   return (
     <div className="flex items-start gap-3">
       <div
-        className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center mt-0.5 ${
+        className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center mt-0.5 transition-colors ${
           completed
-            ? "bg-vn-red border-vn-red"
-            : "border-vn-border"
+            ? "bg-vntv-red border-vntv-red"
+            : "border-border"
         }`}
       >
         {completed && (
@@ -126,7 +141,7 @@ function ChecklistItem({
           </svg>
         )}
       </div>
-      <span className={completed ? "text-vn-text" : "text-vn-muted"}>
+      <span className={completed ? "text-foreground" : "text-foreground-muted"}>
         {children}
       </span>
     </div>
