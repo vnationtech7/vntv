@@ -509,7 +509,7 @@ function IconShowcase() {
 function DialogShowcase() {
   return (
     <Dialog>
-      <DialogTrigger>
+      <DialogTrigger asChild>
         <Button>Open Dialog</Button>
       </DialogTrigger>
       <DialogContent>
@@ -524,7 +524,7 @@ function DialogShowcase() {
           </p>
         </DialogBody>
         <DialogFooter>
-          <DialogClose>
+          <DialogClose asChild>
             <Button variant="ghost">Cancel</Button>
           </DialogClose>
           <Button>Confirm</Button>

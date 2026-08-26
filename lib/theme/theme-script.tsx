@@ -1,7 +1,11 @@
+"use client";
+
+import Script from "next/script";
+
 /**
  * Theme initialization script
  * 
- * This script runs immediately (blocking) in the <head> to prevent
+ * This script runs immediately (blocking) before interactive to prevent
  * flash of unstyled content (FOUC) when loading the page.
  * 
  * It reads the theme from localStorage and applies it to the <html>
@@ -34,9 +38,10 @@ export function ThemeScript({ storageKey = "vntv-theme" }: { storageKey?: string
   `;
 
   return (
-    <script
+    <Script
+      id="theme-script"
+      strategy="beforeInteractive"
       dangerouslySetInnerHTML={{ __html: themeScript }}
-      suppressHydrationWarning
     />
   );
 }

@@ -7,6 +7,8 @@ import {
   useState,
   HTMLAttributes,
   ButtonHTMLAttributes,
+  cloneElement,
+  isValidElement,
 } from "react";
 import { cn } from "@/lib/utils";
 
@@ -69,19 +71,30 @@ export function Dialog({ open: controlledOpen, onOpenChange, children }: DialogP
 }
 
 export interface DialogTriggerProps
-  extends ButtonHTMLAttributes<HTMLButtonElement> {}
+  extends ButtonHTMLAttributes<HTMLButtonElement> {
+  asChild?: boolean;
+}
 
-export function DialogTrigger({ children, onClick, ...props }: DialogTriggerProps) {
+export function DialogTrigger({ children, onClick, asChild, ...props }: DialogTriggerProps) {
   const { setOpen } = useDialogContext();
 
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    setOpen(true);
+    onClick?.(e);
+  };
+
+  if (asChild && isValidElement(children)) {
+    return cloneElement(children, {
+      onClick: (e: React.MouseEvent<HTMLButtonElement>) => {
+        handleClick(e);
+        // @ts-ignore - Call original onClick if it exists
+        children.props.onClick?.(e);
+      },
+    } as any);
+  }
+
   return (
-    <button
-      onClick={(e) => {
-        setOpen(true);
-        onClick?.(e);
-      }}
-      {...props}
-    >
+    <button onClick={handleClick} {...props}>
       {children}
     </button>
   );
@@ -213,19 +226,30 @@ export function DialogFooter({ className, children, ...props }: DialogFooterProp
 }
 
 export interface DialogCloseProps
-  extends ButtonHTMLAttributes<HTMLButtonElement> {}
+  extends ButtonHTMLAttributes<HTMLButtonElement> {
+  asChild?: boolean;
+}
 
-export function DialogClose({ children, onClick, ...props }: DialogCloseProps) {
+export function DialogClose({ children, onClick, asChild, ...props }: DialogCloseProps) {
   const { setOpen } = useDialogContext();
 
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    setOpen(false);
+    onClick?.(e);
+  };
+
+  if (asChild && isValidElement(children)) {
+    return cloneElement(children, {
+      onClick: (e: React.MouseEvent<HTMLButtonElement>) => {
+        handleClick(e);
+        // @ts-ignore - Call original onClick if it exists
+        children.props.onClick?.(e);
+      },
+    } as any);
+  }
+
   return (
-    <button
-      onClick={(e) => {
-        setOpen(false);
-        onClick?.(e);
-      }}
-      {...props}
-    >
+    <button onClick={handleClick} {...props}>
       {children}
     </button>
   );
