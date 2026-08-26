@@ -26,6 +26,7 @@ export {
   User,
   LogOut,
   LogIn,
+  Loader2 as Loader,
 } from "lucide-react";
 
 // Content & Media

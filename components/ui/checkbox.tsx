@@ -1,15 +1,15 @@
-import { forwardRef, InputHTMLAttributes } from "react";
+import { forwardRef, InputHTMLAttributes, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 export interface CheckboxProps
   extends Omit<InputHTMLAttributes<HTMLInputElement>, "type"> {
-  label?: string;
+  label?: ReactNode;
   error?: string;
 }
 
 const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
   ({ className, label, error, id, disabled, ...props }, ref) => {
-    const checkboxId = id || label?.toLowerCase().replace(/\s+/g, "-");
+    const checkboxId = id || (typeof label === "string" ? label.toLowerCase().replace(/\s+/g, "-") : undefined);
 
     return (
       <div className="flex flex-col gap-1.5">
