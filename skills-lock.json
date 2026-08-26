@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "core-design": {
+      "source": "inhaq/core-design-skills",
+      "sourceType": "github",
+      "skillPath": "skills/core-design/SKILL.md",
+      "computedHash": "6771e5871851f37c373972efb4134a9ab35716a375d2133ec48e6debae00dbaf"
+    }
+  }
+}
