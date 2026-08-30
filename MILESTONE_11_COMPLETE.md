@@ -2,11 +2,22 @@
 
 **Status:** Complete  
 **Date:** August 29, 2026  
-**Version:** 1.0.0
+**Version:** 2.0.0 (Updated with direct homepage integration)
 
 ## Overview
 
-Implemented a complete RSS news ingestion system with automated feed fetching, editorial review workflow, and comprehensive monitoring dashboard. The system automatically imports news from configured RSS feeds every 4 hours using Supabase pg_cron.
+Implemented a complete RSS news ingestion system with automated feed fetching, editorial review workflow, and comprehensive monitoring dashboard. RSS items now appear **directly on the homepage** alongside articles as a separate content type, eliminating the need for article conversion.
+
+## Key Architecture Decision
+
+**RSS items are NOT converted to articles.** Instead, they:
+- Display directly on homepage (Latest News, Trending)
+- Have their own detail page (`/rss/[id]`)
+- Link to original sources
+- Keep RSS images as direct URLs (no upload needed)
+- Maintain proper source attribution
+
+This approach avoids content duplication and reduces computational overhead.
 
 ## Features Implemented
 
@@ -511,7 +522,7 @@ SELECT cron.schedule(
 
 ## Files Changed/Created
 
-### New Files Created (14):
+### New Files Created (17):
 1. `/app/actions/rss.ts` - RSS server actions
 2. `/app/admin/rss/page.tsx` - Feeds list page
 3. `/app/admin/rss/new/page.tsx` - Create feed page
@@ -526,11 +537,18 @@ SELECT cron.schedule(
 12. `/app/api/rss/ingest/[feedId]/route.ts` - Single feed API
 13. `/components/cms/rss-feed-form.tsx` - Feed form component
 14. `/lib/rss/parser.ts` - RSS parser utility
+15. `/app/rss/[id]/page.tsx` - RSS item detail page
+16. `/app/rss/[id]/rss-item-viewer.tsx` - RSS viewer component
+17. `/components/content/content-card.tsx` - Unified content card
 
-### Modified Files (2):
+### Modified Files (7):
 1. `/components/cms/admin-layout.tsx` - Added RSS navigation links
-2. `/supabase/migrations/20260829000002_rss_rls_policies.sql` - RLS policies
-3. `/supabase/migrations/20260829000003_rss_cron_job.sql` - Cron job setup
+2. `/app/actions/homepage.ts` - Fetches RSS items + articles
+3. `/components/homepage/latest-news-section.tsx` - Uses ContentCard
+4. `/components/homepage/trending-sidebar.tsx` - Supports RSS items
+5. `/components/content/trending-item.tsx` - Links RSS to /rss/[id]
+6. `/components/content/index.ts` - Exports ContentCard
+7. `/supabase/migrations/` - RLS policies and cron job
 
 ## Conclusion
 

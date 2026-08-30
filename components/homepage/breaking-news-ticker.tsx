@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Flame } from "lucide-react";
 import { getActiveBreakingNews, type BreakingNews } from "@/app/actions/breaking-news";
@@ -9,21 +9,31 @@ export function BreakingNewsTicker() {
   const [breakingNews, setBreakingNews] = useState<BreakingNews[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Auto-rotation interval (8 seconds)
+  const ROTATION_INTERVAL = 8000;
+  const TRANSITION_DURATION = 300;
 
   useEffect(() => {
     loadBreakingNews();
   }, []);
 
   useEffect(() => {
-    if (breakingNews.length <= 1) return;
+    if (breakingNews.length <= 1 || isPaused) return;
 
-    // Auto-rotate every 5 seconds
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % breakingNews.length);
-    }, 5000);
+    timerRef.current = setInterval(() => {
+      handleNext();
+    }, ROTATION_INTERVAL);
 
-    return () => clearInterval(interval);
-  }, [breakingNews.length]);
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, [currentIndex, breakingNews.length, isPaused]);
 
   const loadBreakingNews = async () => {
     setLoading(true);
@@ -34,12 +44,37 @@ export function BreakingNewsTicker() {
     setLoading(false);
   };
 
-  const handlePrevious = () => {
-    setCurrentIndex((prev) => (prev - 1 + breakingNews.length) % breakingNews.length);
+  const handleNext = () => {
+    if (isTransitioning || breakingNews.length <= 1) return;
+
+    setIsTransitioning(true);
+    setCurrentIndex((prev) => (prev + 1) % breakingNews.length);
+
+    setTimeout(() => {
+      setIsTransitioning(false);
+    }, TRANSITION_DURATION);
   };
 
-  const handleNext = () => {
-    setCurrentIndex((prev) => (prev + 1) % breakingNews.length);
+  const handlePrevious = () => {
+    if (isTransitioning || breakingNews.length <= 1) return;
+
+    setIsTransitioning(true);
+    setCurrentIndex((prev) => (prev - 1 + breakingNews.length) % breakingNews.length);
+
+    setTimeout(() => {
+      setIsTransitioning(false);
+    }, TRANSITION_DURATION);
+  };
+
+  const handleDotClick = (index: number) => {
+    if (isTransitioning || index === currentIndex) return;
+
+    setIsTransitioning(true);
+    setCurrentIndex(index);
+
+    setTimeout(() => {
+      setIsTransitioning(false);
+    }, TRANSITION_DURATION);
   };
 
   const getTimeAgo = (dateString: string) => {
@@ -74,41 +109,76 @@ export function BreakingNewsTicker() {
   }
 
   const currentNews = breakingNews[currentIndex];
-  const headline = currentNews.headline_override || currentNews.article?.title || "Breaking News";
-  const slug = currentNews.article?.slug;
-  const publishedAt = currentNews.article?.published_at || currentNews.created_at;
+  
+  // Determine link href
+  const getLink = () => {
+    if (currentNews.article_id && currentNews.article) {
+      return `/news/${currentNews.article.slug}`;
+    }
+    if (currentNews.link_url) {
+      return currentNews.link_url;
+    }
+    return null;
+  };
+
+  const link = getLink();
+  const isExternalLink = link?.startsWith("http");
 
   return (
     <div className="border-b border-border bg-vntv-red/5">
       <div className="container mx-auto px-4">
-        <div className="flex items-center gap-4 py-2">
+        <div 
+          className="flex items-center gap-4 py-2"
+          onMouseEnter={() => setIsPaused(true)}
+          onMouseLeave={() => setIsPaused(false)}
+        >
           {/* Breaking Badge */}
           <div className="flex items-center gap-1.5 rounded bg-vntv-red px-3 py-1 text-xs font-bold uppercase text-white">
-            <Flame className="h-3.5 w-3.5" />
+            <Flame className="h-3.5 w-3.5 animate-pulse" />
             <span>Breaking</span>
           </div>
 
           {/* News Content */}
-          <div className="flex-1 overflow-hidden">
-            {slug ? (
-              <Link
-                href={`/news/${slug}`}
-                className="group flex items-center gap-3 transition-opacity hover:opacity-80"
-              >
-                <span className="truncate text-sm font-medium text-text-primary group-hover:text-vntv-red transition-colors">
-                  {headline}
-                </span>
-                <span className="flex-shrink-0 text-xs text-text-tertiary">
-                  {getTimeAgo(publishedAt)}
-                </span>
-              </Link>
+          <div 
+            className={`flex-1 overflow-hidden transition-opacity duration-${TRANSITION_DURATION} ${
+              isTransitioning ? "opacity-0" : "opacity-100"
+            }`}
+          >
+            {link ? (
+              isExternalLink ? (
+                <a
+                  href={link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex items-center gap-3 transition-opacity hover:opacity-80"
+                >
+                  <span className="truncate text-sm font-medium text-text-primary group-hover:text-vntv-red transition-colors">
+                    {currentNews.headline_override}
+                  </span>
+                  <span className="flex-shrink-0 text-xs text-text-tertiary">
+                    {getTimeAgo(currentNews.starts_at)}
+                  </span>
+                </a>
+              ) : (
+                <Link
+                  href={link}
+                  className="group flex items-center gap-3 transition-opacity hover:opacity-80"
+                >
+                  <span className="truncate text-sm font-medium text-text-primary group-hover:text-vntv-red transition-colors">
+                    {currentNews.headline_override}
+                  </span>
+                  <span className="flex-shrink-0 text-xs text-text-tertiary">
+                    {getTimeAgo(currentNews.starts_at)}
+                  </span>
+                </Link>
+              )
             ) : (
               <div className="flex items-center gap-3">
                 <span className="truncate text-sm font-medium text-text-primary">
-                  {headline}
+                  {currentNews.headline_override}
                 </span>
                 <span className="flex-shrink-0 text-xs text-text-tertiary">
-                  {getTimeAgo(publishedAt)}
+                  {getTimeAgo(currentNews.starts_at)}
                 </span>
               </div>
             )}
@@ -119,14 +189,16 @@ export function BreakingNewsTicker() {
             <div className="flex items-center gap-1">
               <button
                 onClick={handlePrevious}
-                className="flex h-8 w-8 items-center justify-center rounded-full text-text-secondary transition-colors hover:bg-background-panel hover:text-text-primary"
+                disabled={isTransitioning}
+                className="flex h-8 w-8 items-center justify-center rounded-full text-text-secondary transition-colors hover:bg-background-panel hover:text-text-primary disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label="Previous breaking news"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
               <button
                 onClick={handleNext}
-                className="flex h-8 w-8 items-center justify-center rounded-full text-text-secondary transition-colors hover:bg-background-panel hover:text-text-primary"
+                disabled={isTransitioning}
+                className="flex h-8 w-8 items-center justify-center rounded-full text-text-secondary transition-colors hover:bg-background-panel hover:text-text-primary disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label="Next breaking news"
               >
                 <ChevronRight className="h-4 w-4" />
@@ -140,8 +212,9 @@ export function BreakingNewsTicker() {
               {breakingNews.map((_, index) => (
                 <button
                   key={index}
-                  onClick={() => setCurrentIndex(index)}
-                  className={`h-1.5 rounded-full transition-all ${
+                  onClick={() => handleDotClick(index)}
+                  disabled={isTransitioning}
+                  className={`h-1.5 rounded-full transition-all disabled:cursor-not-allowed ${
                     index === currentIndex
                       ? "w-6 bg-vntv-red"
                       : "w-1.5 bg-border hover:bg-text-tertiary"

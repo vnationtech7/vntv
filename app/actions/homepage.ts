@@ -2,6 +2,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { revalidateHomepage, revalidateAdmin } from "@/lib/utils/cache-revalidation";
 
 export type FeaturedArticle = {
   id: string;
@@ -520,5 +521,461 @@ export async function getLatestVideos(limit: number = 4) {
   } catch (err) {
     console.error("Unexpected error fetching latest videos:", err);
     return { data: null, error: "Failed to fetch latest videos" };
+  }
+}
+
+// Homepage Sections Management
+
+export type HomepageSection = {
+  id: string;
+  name: string;
+  slug: string | null;
+  description: string | null;
+  section_type: 'featured' | 'latest' | 'trending' | 'category' | 'custom';
+  category_id: string | null;
+  display_order: number;
+  is_enabled: boolean;
+  configuration: {
+    max_items?: number;
+    layout_style?: 'grid' | 'list' | 'carousel' | 'hero';
+    show_images?: boolean;
+    show_excerpt?: boolean;
+    show_author?: boolean;
+    show_date?: boolean;
+  };
+  created_at: string;
+  updated_at: string;
+  category?: {
+    id: string;
+    name: string;
+    slug: string;
+  } | null;
+};
+
+export type HomepageItem = {
+  id: string;
+  section_id: string;
+  content_type: 'article' | 'video' | 'rss' | 'programme';
+  content_id: string;
+  display_order: number;
+  is_pinned: boolean;
+  custom_headline: string | null;
+  custom_excerpt: string | null;
+  custom_image_url: string | null;
+  start_time: string | null;
+  end_time: string | null;
+  is_active: boolean;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+/**
+ * Get all homepage sections (admin)
+ */
+export async function getAllHomepageSections() {
+  const supabase = await createClient();
+
+  try {
+    const { data, error } = await supabase
+      .from("homepage_sections")
+      .select(`
+        *,
+        category:categories(id, name, slug)
+      `)
+      .order("display_order", { ascending: true });
+
+    if (error) {
+      console.error("Error fetching homepage sections:", error);
+      return { data: null, error: error.message };
+    }
+
+    return { data: data as HomepageSection[], error: null };
+  } catch (err) {
+    console.error("Error fetching homepage sections:", err);
+    return { data: null, error: "Failed to fetch homepage sections" };
+  }
+}
+
+/**
+ * Get enabled homepage sections (public)
+ */
+export async function getEnabledHomepageSections() {
+  const supabase = await createClient();
+
+  try {
+    const { data, error } = await supabase
+      .from("homepage_sections")
+      .select(`
+        *,
+        category:categories(id, name, slug)
+      `)
+      .eq("is_enabled", true)
+      .order("display_order", { ascending: true });
+
+    if (error) {
+      console.error("Error fetching enabled homepage sections:", error);
+      return { data: null, error: error.message };
+    }
+
+    return { data: data as HomepageSection[], error: null };
+  } catch (err) {
+    console.error("Error fetching enabled homepage sections:", err);
+    return { data: null, error: "Failed to fetch enabled homepage sections" };
+  }
+}
+
+/**
+ * Get single homepage section by ID
+ */
+export async function getHomepageSectionById(id: string) {
+  const supabase = await createClient();
+
+  try {
+    const { data, error } = await supabase
+      .from("homepage_sections")
+      .select(`
+        *,
+        category:categories(id, name, slug)
+      `)
+      .eq("id", id)
+      .single();
+
+    if (error || !data) {
+      return { data: null, error: "Homepage section not found" };
+    }
+
+    return { data: data as HomepageSection, error: null };
+  } catch (err) {
+    console.error("Error fetching homepage section:", err);
+    return { data: null, error: "Failed to fetch homepage section" };
+  }
+}
+
+/**
+ * Create homepage section
+ */
+export async function createHomepageSection(sectionData: {
+  name: string;
+  slug?: string | null;
+  description?: string | null;
+  section_type: 'featured' | 'latest' | 'trending' | 'category' | 'custom';
+  category_id?: string | null;
+  display_order?: number;
+  is_enabled?: boolean;
+  configuration?: {
+    max_items?: number;
+    layout_style?: 'grid' | 'list' | 'carousel' | 'hero';
+    show_images?: boolean;
+    show_excerpt?: boolean;
+    show_author?: boolean;
+    show_date?: boolean;
+  };
+}) {
+  const supabase = await createClient();
+
+  try {
+    const { data, error } = await supabase
+      .from("homepage_sections")
+      .insert({
+        name: sectionData.name,
+        slug: sectionData.slug || null,
+        description: sectionData.description || null,
+        section_type: sectionData.section_type,
+        category_id: sectionData.category_id || null,
+        display_order: sectionData.display_order ?? 0,
+        is_enabled: sectionData.is_enabled ?? true,
+        configuration: sectionData.configuration || {
+          max_items: 6,
+          layout_style: 'grid',
+          show_images: true,
+          show_excerpt: true,
+          show_author: false,
+          show_date: true,
+        },
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error creating homepage section:", error);
+      return { data: null, error: error.message };
+    }
+
+    revalidateHomepage();
+    revalidateAdmin("/admin/homepage");
+
+    return { data, error: null };
+  } catch (err) {
+    console.error("Error creating homepage section:", err);
+    return { data: null, error: "Failed to create homepage section" };
+  }
+}
+
+/**
+ * Update homepage section
+ */
+export async function updateHomepageSection(
+  id: string,
+  sectionData: Partial<HomepageSection>
+) {
+  const supabase = await createClient();
+
+  try {
+    const { data, error } = await supabase
+      .from("homepage_sections")
+      .update({
+        ...sectionData,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error updating homepage section:", error);
+      return { data: null, error: error.message };
+    }
+
+    revalidateHomepage();
+    revalidateAdmin("/admin/homepage");
+
+    return { data, error: null };
+  } catch (err) {
+    console.error("Error updating homepage section:", err);
+    return { data: null, error: "Failed to update homepage section" };
+  }
+}
+
+/**
+ * Delete homepage section
+ */
+export async function deleteHomepageSection(id: string) {
+  const supabase = await createClient();
+
+  try {
+    const { error } = await supabase
+      .from("homepage_sections")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.error("Error deleting homepage section:", error);
+      return { success: false, error: error.message };
+    }
+
+    revalidateHomepage();
+    revalidateAdmin("/admin/homepage");
+
+    return { success: true, error: null };
+  } catch (err) {
+    console.error("Error deleting homepage section:", err);
+    return { success: false, error: "Failed to delete homepage section" };
+  }
+}
+
+/**
+ * Toggle homepage section status
+ */
+export async function toggleHomepageSectionStatus(id: string, isEnabled: boolean) {
+  const supabase = await createClient();
+
+  try {
+    const { data, error } = await supabase
+      .from("homepage_sections")
+      .update({
+        is_enabled: isEnabled,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error toggling homepage section status:", error);
+      return { data: null, error: error.message };
+    }
+
+    revalidateHomepage();
+    revalidateAdmin("/admin/homepage");
+
+    return { data, error: null };
+  } catch (err) {
+    console.error("Error toggling homepage section status:", err);
+    return { data: null, error: "Failed to toggle homepage section status" };
+  }
+}
+
+// Homepage Items Management
+
+/**
+ * Get items for a section
+ */
+export async function getHomepageSectionItems(sectionId: string) {
+  const supabase = await createClient();
+
+  try {
+    const { data, error } = await supabase
+      .from("homepage_items")
+      .select("*")
+      .eq("section_id", sectionId)
+      .order("is_pinned", { ascending: false })
+      .order("display_order", { ascending: true });
+
+    if (error) {
+      console.error("Error fetching homepage items:", error);
+      return { data: null, error: error.message };
+    }
+
+    return { data: data as HomepageItem[], error: null };
+  } catch (err) {
+    console.error("Error fetching homepage items:", err);
+    return { data: null, error: "Failed to fetch homepage items" };
+  }
+}
+
+/**
+ * Add item to section
+ */
+export async function addHomepageItem(itemData: {
+  section_id: string;
+  content_type: 'article' | 'video' | 'rss' | 'programme';
+  content_id: string;
+  display_order?: number;
+  is_pinned?: boolean;
+  custom_headline?: string | null;
+  custom_excerpt?: string | null;
+  custom_image_url?: string | null;
+  start_time?: string | null;
+  end_time?: string | null;
+  is_active?: boolean;
+}) {
+  const supabase = await createClient();
+
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { data: null, error: "Unauthorized" };
+    }
+
+    const { data, error } = await supabase
+      .from("homepage_items")
+      .insert({
+        section_id: itemData.section_id,
+        content_type: itemData.content_type,
+        content_id: itemData.content_id,
+        display_order: itemData.display_order ?? 0,
+        is_pinned: itemData.is_pinned ?? false,
+        custom_headline: itemData.custom_headline || null,
+        custom_excerpt: itemData.custom_excerpt || null,
+        custom_image_url: itemData.custom_image_url || null,
+        start_time: itemData.start_time || null,
+        end_time: itemData.end_time || null,
+        is_active: itemData.is_active ?? true,
+        created_by: user.id,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error adding homepage item:", error);
+      return { data: null, error: error.message };
+    }
+
+    revalidateHomepage();
+    revalidateAdmin("/admin/homepage");
+
+    return { data, error: null };
+  } catch (err) {
+    console.error("Error adding homepage item:", err);
+    return { data: null, error: "Failed to add homepage item" };
+  }
+}
+
+/**
+ * Update homepage item
+ */
+export async function updateHomepageItem(
+  id: string,
+  itemData: Partial<HomepageItem>
+) {
+  const supabase = await createClient();
+
+  try {
+    const { data, error } = await supabase
+      .from("homepage_items")
+      .update({
+        ...itemData,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error updating homepage item:", error);
+      return { data: null, error: error.message };
+    }
+
+    revalidateHomepage();
+    revalidateAdmin("/admin/homepage");
+
+    return { data, error: null };
+  } catch (err) {
+    console.error("Error updating homepage item:", err);
+    return { data: null, error: "Failed to update homepage item" };
+  }
+}
+
+/**
+ * Remove item from section
+ */
+export async function removeHomepageItem(id: string) {
+  const supabase = await createClient();
+
+  try {
+    const { error } = await supabase
+      .from("homepage_items")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.error("Error removing homepage item:", error);
+      return { success: false, error: error.message };
+    }
+
+    revalidateHomepage();
+    revalidateAdmin("/admin/homepage");
+
+    return { success: true, error: null };
+  } catch (err) {
+    console.error("Error removing homepage item:", err);
+    return { success: false, error: "Failed to remove homepage item" };
+  }
+}
+
+/**
+ * Reorder homepage items in a section
+ */
+export async function reorderHomepageItems(items: { id: string; display_order: number }[]) {
+  const supabase = await createClient();
+
+  try {
+    const updates = items.map(item =>
+      supabase
+        .from("homepage_items")
+        .update({ display_order: item.display_order })
+        .eq("id", item.id)
+    );
+
+    await Promise.all(updates);
+
+    revalidateHomepage();
+    revalidateAdmin("/admin/homepage");
+
+    return { success: true, error: null };
+  } catch (err) {
+    console.error("Error reordering homepage items:", err);
+    return { success: false, error: "Failed to reorder items" };
   }
 }

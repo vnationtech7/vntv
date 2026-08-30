@@ -23,6 +23,14 @@ export function ProfileForm({ profile }: ProfileFormProps) {
   const [success, setSuccess] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url);
 
+  // Function to trigger file input click
+  const triggerFileInput = () => {
+    const fileInput = document.getElementById("avatar-upload") as HTMLInputElement;
+    if (fileInput) {
+      fileInput.click();
+    }
+  };
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
@@ -108,26 +116,27 @@ export function ProfileForm({ profile }: ProfileFormProps) {
             )}
           </Avatar>
           <div className="flex flex-col gap-2">
-            <label htmlFor="avatar-upload">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={uploading}
-              >
-                <ImageIcon className="mr-2 h-4 w-4" />
-                {uploading ? "Uploading..." : "Upload new"}
-              </Button>
-              <input
-                id="avatar-upload"
-                type="file"
-                accept="image/*"
-                className="sr-only"
-                onChange={handleAvatarUpload}
-                disabled={uploading}
-              />
-            </label>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={uploading}
+              onClick={triggerFileInput}
+            >
+              <ImageIcon className="mr-2 h-4 w-4" />
+              {uploading ? "Uploading..." : "Upload new"}
+            </Button>
+            <input
+              id="avatar-upload"
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={handleAvatarUpload}
+              disabled={uploading}
+            />
             {avatarUrl && (
               <Button
+                type="button"
                 variant="ghost"
                 size="sm"
                 onClick={handleDeleteAvatar}

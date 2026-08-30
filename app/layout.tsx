@@ -7,6 +7,15 @@ import { AuthProvider } from "@/components/auth";
 export const metadata: Metadata = {
   title: "VNTV - Africa. Our Stories. Our Way.",
   description: "African news and video platform for digital journalism",
+  icons: {
+    icon: [
+      { url: "/logo.png", sizes: "any" },
+      { url: "/logo.png", type: "image/png", sizes: "32x32" },
+    ],
+    apple: [
+      { url: "/logo.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
 };
 
 export default function RootLayout({

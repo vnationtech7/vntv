@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ThemeToggleCompact } from "@/components/ui/theme-toggle";
 import { useAuth } from "@/components/auth";
-import { useUser } from "@/hooks/use-user";
+import { useUserProfile } from "@/hooks/use-user-profile";
 import { SearchDialog } from "./search-dialog";
 import {
   Menu,
@@ -45,7 +46,7 @@ export function PublicHeader() {
   const [searchOpen, setSearchOpen] = useState(false);
   const pathname = usePathname();
   const { openLogin } = useAuth();
-  const { user } = useUser();
+  const { user, profile } = useUserProfile();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -54,7 +55,7 @@ export function PublicHeader() {
         <div className="container mx-auto px-4">
           <div className="flex h-12 items-center justify-between">
             {/* Social Links */}
-            <div className="hidden items-center gap-2 md:flex">
+            <div className="hidden items-center gap-2 md:flex flex-1">
               {socialLinks.map((social) => (
                 <a
                   key={social.name}
@@ -69,8 +70,22 @@ export function PublicHeader() {
               ))}
             </div>
 
+            {/* Center Logo */}
+            <div className="flex items-center justify-center flex-1">
+              <Link href="/" className="flex items-center">
+                <Image
+                  src="/logo.png"
+                  alt="VNTV Logo"
+                  width={96}
+                  height={32}
+                  className="h-9 w-auto object-contain"
+                  priority
+                />
+              </Link>
+            </div>
+
             {/* Right Actions */}
-            <div className="ml-auto flex items-center gap-3">
+            <div className="flex items-center gap-3 justify-end flex-1">
               <ThemeToggleCompact />
               <button
                 onClick={() => setSearchOpen(true)}
@@ -82,10 +97,18 @@ export function PublicHeader() {
               {user ? (
                 <Link
                   href="/settings"
-                  className="flex h-8 w-8 items-center justify-center rounded-full bg-vntv-red text-white transition-opacity hover:opacity-90"
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-vntv-red text-white transition-opacity hover:opacity-90 overflow-hidden"
                   aria-label="Profile"
                 >
-                  <User className="h-4 w-4" />
+                  {profile?.avatar_url ? (
+                    <img 
+                      src={profile.avatar_url} 
+                      alt={profile.full_name || profile.email}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <User className="h-4 w-4" />
+                  )}
                 </Link>
               ) : (
                 <Button

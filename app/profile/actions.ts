@@ -124,14 +124,14 @@ export async function uploadAvatar(formData: FormData) {
     return { error: "File size must be less than 2MB", data: null };
   }
 
-  // Create unique filename
+  // Create unique filename with user_id folder structure for RLS
   const fileExt = file.name.split(".").pop();
-  const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-  const filePath = `avatars/${fileName}`;
+  const fileName = `avatar-${Date.now()}.${fileExt}`;
+  const filePath = `${user.id}/${fileName}`;
 
-  // Upload to Supabase Storage
+  // Upload to Supabase Storage (avatars bucket)
   const { error: uploadError } = await supabase.storage
-    .from("media")
+    .from("avatars")
     .upload(filePath, file, {
       cacheControl: "3600",
       upsert: false,
@@ -145,7 +145,7 @@ export async function uploadAvatar(formData: FormData) {
   // Get public URL
   const {
     data: { publicUrl },
-  } = supabase.storage.from("media").getPublicUrl(filePath);
+  } = supabase.storage.from("avatars").getPublicUrl(filePath);
 
   // Update profile with new avatar URL
   // @ts-ignore - Database schema will be set up in Milestone 1
@@ -200,11 +200,11 @@ export async function deleteAvatar() {
   // Extract file path from URL
   const urlParts = typedProfile.avatar_url.split("/");
   const fileName = urlParts[urlParts.length - 1];
-  const filePath = `avatars/${fileName}`;
+  const filePath = `${user.id}/${fileName}`;
 
   // Delete from storage
   const { error: deleteError } = await supabase.storage
-    .from("media")
+    .from("avatars")
     .remove([filePath]);
 
   if (deleteError) {
