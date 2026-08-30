@@ -14,7 +14,7 @@ export async function signUp(formData: FormData) {
   const password = formData.get("password") as string;
   const fullName = formData.get("fullName") as string;
 
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
@@ -27,6 +27,13 @@ export async function signUp(formData: FormData) {
 
   if (error) {
     return { error: error.message };
+  }
+
+  // If user was created and is already logged in (email confirmation disabled),
+  // create their profile immediately
+  if (data.user && data.session) {
+    const { createProfile } = await import("@/app/profile/actions");
+    await createProfile(data.user.id, email);
   }
 
   revalidatePath("/", "layout");
@@ -42,7 +49,7 @@ export async function signIn(formData: FormData) {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
 
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
@@ -51,8 +58,25 @@ export async function signIn(formData: FormData) {
     return { error: error.message };
   }
 
+  // Check if profile exists, create if not
+  if (data.user) {
+    const { data: existingProfile } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("id", data.user.id)
+      .single();
+
+    if (!existingProfile) {
+      // Profile doesn't exist, create it
+      const { createProfile } = await import("@/app/profile/actions");
+      await createProfile(data.user.id, email);
+    }
+  }
+
   revalidatePath("/", "layout");
-  redirect("/");
+  
+  // Return success without redirect to allow modal to close first
+  return { success: true };
 }
 
 /**
@@ -86,6 +110,7 @@ export async function signOut() {
   const { error } = await supabase.auth.signOut();
 
   if (error) {
+    console.error("Sign out error:", error);
     return { error: error.message };
   }
 

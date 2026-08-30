@@ -2,14 +2,23 @@ import { forwardRef, InputHTMLAttributes, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 export interface CheckboxProps
-  extends Omit<InputHTMLAttributes<HTMLInputElement>, "type"> {
+  extends Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "onChange"> {
   label?: ReactNode;
   error?: string;
+  onCheckedChange?: (checked: boolean) => void;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
-  ({ className, label, error, id, disabled, ...props }, ref) => {
+  ({ className, label, error, id, disabled, onCheckedChange, onChange, ...props }, ref) => {
     const checkboxId = id || (typeof label === "string" ? label.toLowerCase().replace(/\s+/g, "-") : undefined);
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      // Call the standard onChange if provided
+      onChange?.(e);
+      // Call the custom onCheckedChange if provided
+      onCheckedChange?.(e.target.checked);
+    };
 
     return (
       <div className="flex flex-col gap-1.5">
@@ -20,16 +29,17 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
               type="checkbox"
               id={checkboxId}
               className={cn(
-                "peer h-5 w-5 appearance-none rounded-xs border-2 border-[--color-border]",
-                "bg-[--color-background-panel]",
-                "checked:bg-[--color-vntv-red] checked:border-[--color-vntv-red]",
-                "focus:outline-none focus:ring-2 focus:ring-[--color-vntv-red] focus:ring-offset-2",
+                "peer h-5 w-5 appearance-none rounded-xs border-2 border-border",
+                "bg-background-panel",
+                "checked:bg-vntv-red checked:border-vntv-red",
+                "focus:outline-none focus:ring-2 focus:ring-vntv-red focus:ring-offset-2",
                 "transition-all duration-200 cursor-pointer",
                 "disabled:opacity-50 disabled:cursor-not-allowed",
-                error && "border-[--color-error]",
+                error && "border-error",
                 className
               )}
               disabled={disabled}
+              onChange={handleChange}
               aria-invalid={error ? "true" : "false"}
               aria-describedby={error ? `${checkboxId}-error` : undefined}
               {...props}
@@ -53,7 +63,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
             <label
               htmlFor={checkboxId}
               className={cn(
-                "text-[14px] text-[--color-foreground] cursor-pointer select-none",
+                "text-[14px] text-text-primary cursor-pointer select-none",
                 disabled && "opacity-50 cursor-not-allowed"
               )}
             >
@@ -64,7 +74,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
         {error && (
           <p
             id={`${checkboxId}-error`}
-            className="text-[11px] text-[--color-error] ml-7"
+            className="text-[11px] text-error ml-7"
             role="alert"
           >
             {error}

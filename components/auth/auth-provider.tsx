@@ -44,16 +44,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       {/* Login Modal */}
       <LoginModal
-        open={activeModal === "login"}
-        onOpenChange={(open) => !open && setActiveModal(null)}
+        isOpen={activeModal === "login"}
+        onClose={(open) => !open && setActiveModal(null)}
         onSwitchToSignup={() => setActiveModal("signup")}
         onSwitchToReset={() => setActiveModal("reset")}
       />
 
       {/* Signup Modal */}
       <SignupModal
-        open={activeModal === "signup"}
-        onOpenChange={(open) => !open && setActiveModal(null)}
+        isOpen={activeModal === "signup"}
+        onClose={(open) => !open && setActiveModal(null)}
         onSwitchToLogin={() => setActiveModal("login")}
       />
 

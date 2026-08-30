@@ -133,7 +133,7 @@ export function DialogContent({
     >
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/60 animate-fade-in"
+        className="absolute inset-0 bg-black/80 backdrop-blur-sm animate-fade-in"
         onClick={() => setOpen(false)}
         aria-hidden="true"
       />
@@ -141,7 +141,7 @@ export function DialogContent({
       {/* Content */}
       <div
         className={cn(
-          "relative w-full bg-[--color-background] border border-[--color-border] rounded-md shadow-xl animate-scale-in",
+          "relative w-full bg-background-panel border border-border rounded-lg shadow-2xl animate-scale-in",
           "max-h-[90vh] overflow-auto",
           sizes[size],
           className
@@ -160,7 +160,7 @@ export function DialogHeader({ className, children, ...props }: DialogHeaderProp
   return (
     <div
       className={cn(
-        "flex flex-col gap-1.5 p-6 pb-4 border-b border-[--color-border]",
+        "flex flex-col gap-1.5 p-6 pb-4 border-b border-border",
         className
       )}
       {...props}
@@ -194,7 +194,7 @@ export function DialogDescription({
 }: DialogDescriptionProps) {
   return (
     <p
-      className={cn("text-[13px] text-[--color-foreground-muted]", className)}
+      className={cn("text-[13px] text-text-secondary", className)}
       {...props}
     >
       {children}
@@ -218,7 +218,7 @@ export function DialogFooter({ className, children, ...props }: DialogFooterProp
   return (
     <div
       className={cn(
-        "flex items-center justify-end gap-3 p-6 pt-4 border-t border-[--color-border]",
+        "flex items-center justify-end gap-3 p-6 pt-4 border-t border-border",
         className
       )}
       {...props}

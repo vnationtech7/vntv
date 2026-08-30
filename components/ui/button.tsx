@@ -27,14 +27,14 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     const variants = {
       primary:
-        "bg-[--color-vntv-red] text-white hover:bg-[--color-vntv-red-hover] focus-visible:outline-[--color-vntv-red]",
+        "bg-vntv-red text-white hover:bg-vntv-red-hover focus-visible:outline-vntv-red",
       secondary:
-        "bg-[--color-background-panel] text-[--color-foreground] border border-[--color-border] hover:bg-[--color-background-panel-2] focus-visible:outline-[--color-foreground]",
+        "bg-background-panel text-text-primary border border-border hover:bg-background-panel-2 focus-visible:outline-text-primary",
       ghost:
-        "bg-transparent text-[--color-foreground] hover:bg-[--color-background-panel] focus-visible:outline-[--color-foreground]",
+        "bg-transparent text-text-primary hover:bg-background-panel focus-visible:outline-text-primary",
       outline:
-        "bg-transparent text-[--color-vntv-red] border-2 border-[--color-vntv-red] hover:bg-[--color-vntv-red-light] focus-visible:outline-[--color-vntv-red]",
-      text: "bg-transparent text-[--color-foreground-muted] hover:text-[--color-vntv-red] focus-visible:outline-[--color-vntv-red]",
+        "bg-transparent text-vntv-red border-2 border-vntv-red hover:bg-vntv-red-light focus-visible:outline-vntv-red",
+      text: "bg-transparent text-text-secondary hover:text-vntv-red focus-visible:outline-vntv-red",
     };
 
     const sizes = {

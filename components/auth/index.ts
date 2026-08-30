@@ -23,3 +23,4 @@ export { LoginModal } from "./login-modal";
 export { SignupModal } from "./signup-modal";
 export { ResetPasswordModal } from "./reset-password-modal";
 export { ProtectedRoute } from "./protected-route";
+export { AdminRoute } from "./admin-route";

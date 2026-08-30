@@ -19,3 +19,7 @@ export type { DividerProps } from "./divider";
 
 export { AspectRatio } from "./aspect-ratio";
 export type { AspectRatioProps } from "./aspect-ratio";
+
+export { PublicLayout } from "./public-layout";
+export { PublicHeader } from "./public-header";
+export { PublicFooter } from "./public-footer";

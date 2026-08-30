@@ -122,7 +122,7 @@ If you encounter errors during migration:
 
 ### RLS Issues
 
-If you're getting permission errors:
+If you're getting permission errors:.
 
 1. Verify the user has the correct role assigned
 2. Check the RLS policies in the dashboard

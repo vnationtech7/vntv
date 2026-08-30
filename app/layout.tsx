@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/lib/theme/theme-provider";
 import { ThemeScript } from "@/lib/theme/theme-script";
+import { AuthProvider } from "@/components/auth";
 
 export const metadata: Metadata = {
   title: "VNTV - Africa. Our Stories. Our Way.",
@@ -20,11 +21,13 @@ export default function RootLayout({
       </head>
       <body className="font-sans antialiased">
         <ThemeProvider defaultTheme="system" storageKey="vntv-theme">
-          {/* Skip to content link for accessibility */}
-          <a href="#main-content" className="skip-to-content">
-            Skip to content
-          </a>
-          {children}
+          <AuthProvider>
+            {/* Skip to content link for accessibility */}
+            <a href="#main-content" className="skip-to-content">
+              Skip to content
+            </a>
+            {children}
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

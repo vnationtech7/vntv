@@ -29,7 +29,7 @@ export interface Database {
           email: string
           full_name: string | null
           avatar_url: string | null
-          theme: "light" | "dark" | "system" | null
+          bio: string | null
           newsletter_subscribed: boolean
           created_at: string
           updated_at: string
@@ -39,7 +39,7 @@ export interface Database {
           email: string
           full_name?: string | null
           avatar_url?: string | null
-          theme?: "light" | "dark" | "system" | null
+          bio?: string | null
           newsletter_subscribed?: boolean
           created_at?: string
           updated_at?: string
@@ -49,7 +49,7 @@ export interface Database {
           email?: string
           full_name?: string | null
           avatar_url?: string | null
-          theme?: "light" | "dark" | "system" | null
+          bio?: string | null
           newsletter_subscribed?: boolean
           created_at?: string
           updated_at?: string

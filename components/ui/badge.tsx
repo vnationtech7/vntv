@@ -19,12 +19,12 @@ export function Badge({
     "inline-flex items-center gap-1 font-extrabold uppercase tracking-wide rounded-xs";
 
   const variants = {
-    primary: "bg-[--color-vntv-red-light] text-[--color-vntv-red]",
-    secondary: "bg-[--color-background-panel-2] text-[--color-foreground-muted]",
-    success: "bg-[--color-success-light] text-[--color-success-dark]",
-    error: "bg-[--color-error-light] text-[--color-error-dark]",
-    warning: "bg-[--color-warning-light] text-[--color-warning-dark]",
-    info: "bg-[--color-info-light] text-[--color-info-dark]",
+    primary: "bg-vntv-red-light text-vntv-red",
+    secondary: "bg-background-panel-2 text-text-secondary",
+    success: "bg-success-light text-success-dark",
+    error: "bg-error-light text-error-dark",
+    warning: "bg-warning-light text-warning-dark",
+    info: "bg-info-light text-info-dark",
     category: "border-2 border-current bg-transparent",
   };
 

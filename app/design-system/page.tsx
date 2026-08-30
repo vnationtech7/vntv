@@ -33,9 +33,9 @@ import {
   TabsContent,
   Tooltip,
   Skeleton,
-  SkeletonText,
-  SkeletonCard,
-  SkeletonAvatar,
+  ArticleCardSkeleton,
+  VideoCardSkeleton,
+  TrendingItemSkeleton,
   Pagination,
   ToastProvider,
   useToast,
@@ -184,9 +184,9 @@ export default function DesignSystemPage() {
               description="Loading states"
             />
             <Grid cols={3} gap="md">
-              <SkeletonCard />
-              <SkeletonCard />
-              <SkeletonCard />
+              <ArticleCardSkeleton />
+              <ArticleCardSkeleton />
+              <ArticleCardSkeleton />
             </Grid>
           </Section>
 

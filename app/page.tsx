@@ -1,149 +1,67 @@
-"use client";
+import { PublicLayout } from "@/components/layout";
+import { Suspense } from "react";
+import {
+  HeroSection,
+  LatestNewsSection,
+  TrendingSidebar,
+  VideoSection,
+  CategoryStrip,
+  OriginalsSection,
+} from "@/components/homepage";
+import {
+  getFeaturedContent,
+  getLatestArticles,
+  getTrendingArticles,
+  getLatestVideos,
+} from "./actions/homepage";
 
-import { ThemeToggle, ThemeToggleCompact } from "@/components/ui/theme-toggle";
-import { useTheme } from "@/lib/theme/theme-provider";
+export default async function HomePage() {
+  // Fetch all data in parallel
+  const [featuredResult, latestResult, trendingResult, videosResult] =
+    await Promise.all([
+      getFeaturedContent(5), // Changed from getFeaturedArticles
+      getLatestArticles(8),
+      getTrendingArticles(5),
+      getLatestVideos(4),
+    ]);
 
-export default function Home() {
-  const { resolvedTheme } = useTheme();
+  const featuredContent = featuredResult.data || [];
+  const latestArticles = latestResult.data || [];
+  const trendingArticles = trendingResult.data || [];
+  const videos = videosResult.data || [];
 
   return (
-    <main id="main-content" className="min-h-screen flex flex-col items-center justify-center p-8">
-      <div className="max-w-4xl w-full space-y-8 text-center">
-        {/* Theme Toggle - Top Right */}
-        <div className="fixed top-6 right-6 z-10 flex items-center gap-3">
-          <ThemeToggleCompact />
-          <ThemeToggle />
+    <PublicLayout>
+      {/* Hero Section - Articles AND Videos */}
+      <Suspense fallback={<div className="h-[600px] bg-surface-secondary animate-pulse" />}>
+        <HeroSection content={featuredContent} />
+      </Suspense>
+
+      {/* Main Content Area with 2-Column Layout */}
+      <div className="max-w-[1280px] mx-auto px-6">
+        {/* Latest News + Trending Sidebar */}
+        <div className="grid grid-cols-1 lg:grid-cols-[2.4fr_1fr] gap-6 items-start">
+          <Suspense fallback={<div className="h-96 bg-surface-secondary animate-pulse rounded-lg" />}>
+            <LatestNewsSection articles={latestArticles} />
+          </Suspense>
+          <Suspense fallback={<div className="h-96 bg-surface-secondary animate-pulse rounded-lg" />}>
+            <TrendingSidebar articles={trendingArticles} />
+          </Suspense>
         </div>
 
-        {/* VNTV Logo */}
-        <div className="space-y-2">
-          <h1 className="text-6xl font-extrabold tracking-tight">
-            <span className="text-[--color-vntv-red]">VN</span>TV
-          </h1>
-          <p className="text-xs tracking-[0.2em] text-foreground-muted uppercase">
-            Africa. Our Stories. Our Way.
-          </p>
-        </div>
+        {/* Videos Section (Full Width) */}
+        <Suspense fallback={<div className="h-64 bg-surface-secondary animate-pulse rounded-lg my-8" />}>
+          <VideoSection videos={videos} />
+        </Suspense>
 
-        {/* Status Card */}
-        <div className="bg-background-panel border border-border rounded-md p-8 space-y-6">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-vntv-red-light text-vntv-red text-caption-sm font-extrabold uppercase rounded-xs mb-3">
-              <span>⚡</span>
-              <span>Milestone 2 In Progress</span>
-            </div>
-            <h2 className="text-2xl font-bold">
-              Design System & Core UI
-            </h2>
-            <p className="text-foreground-muted">
-              Building the reusable design foundation with {resolvedTheme} theme
-            </p>
-          </div>
+        {/* VNTV Originals with Programmes */}
+        <Suspense fallback={<div className="h-96 bg-surface-secondary animate-pulse rounded-lg my-8" />}>
+          <OriginalsSection />
+        </Suspense>
 
-          <div className="grid gap-4 text-left">
-            <ChecklistItem completed>
-              ✅ Design tokens (colors, typography, spacing)
-            </ChecklistItem>
-            <ChecklistItem completed>
-              ✅ Theme system with provider & toggle
-            </ChecklistItem>
-            <ChecklistItem completed>
-              ✅ Light/Dark theme switching
-            </ChecklistItem>
-            <ChecklistItem completed>
-              ✅ System preference detection
-            </ChecklistItem>
-            <ChecklistItem completed>
-              ✅ Theme persistence (localStorage)
-            </ChecklistItem>
-            <ChecklistItem>
-              Base UI components (Button, Input, Card, etc.)
-            </ChecklistItem>
-            <ChecklistItem>
-              Layout components (Container, Grid, Stack)
-            </ChecklistItem>
-            <ChecklistItem>
-              Icon system
-            </ChecklistItem>
-            <ChecklistItem>
-              Accessibility foundation
-            </ChecklistItem>
-          </div>
-
-          <div className="pt-4 border-t border-border space-y-3">
-            <p className="text-sm font-bold text-foreground">
-              🎨 Theme System Features:
-            </p>
-            <ul className="text-sm text-foreground-muted space-y-1 text-left">
-              <li>• Smooth transitions between themes</li>
-              <li>• No flash of unstyled content (FOUC)</li>
-              <li>• Respects system preferences</li>
-              <li>• Persists across sessions</li>
-              <li>• Three theme toggle variants</li>
-              <li>• Will sync with user profile when authenticated</li>
-            </ul>
-          </div>
-        </div>
-
-        {/* Documentation Links */}
-        <div className="flex gap-4 justify-center text-sm">
-          <a
-            href="/Blueprint.md"
-            className="text-vntv-red hover:text-vntv-red-hover transition-colors"
-          >
-            Blueprint →
-          </a>
-          <a
-            href="/milestones.md"
-            className="text-vntv-red hover:text-vntv-red-hover transition-colors"
-          >
-            Milestones →
-          </a>
-          <a
-            href="/MILESTONE_1_STATUS.md"
-            className="text-vntv-red hover:text-vntv-red-hover transition-colors"
-          >
-            M1 Status →
-          </a>
-        </div>
+        {/* Category Icons Strip (Full Width) */}
+        <CategoryStrip />
       </div>
-    </main>
-  );
-}
-
-function ChecklistItem({
-  children,
-  completed = false,
-}: {
-  children: React.ReactNode;
-  completed?: boolean;
-}) {
-  return (
-    <div className="flex items-start gap-3">
-      <div
-        className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center mt-0.5 transition-colors ${
-          completed
-            ? "bg-vntv-red border-vntv-red"
-            : "border-border"
-        }`}
-      >
-        {completed && (
-          <svg
-            className="w-3 h-3 text-white"
-            fill="none"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path d="M5 13l4 4L19 7"></path>
-          </svg>
-        )}
-      </div>
-      <span className={completed ? "text-foreground" : "text-foreground-muted"}>
-        {children}
-      </span>
-    </div>
+    </PublicLayout>
   );
 }

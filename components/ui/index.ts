@@ -63,11 +63,12 @@ export type { TabsProps, TabsListProps, TabsTriggerProps, TabsContentProps } fro
 export { Tooltip } from "./tooltip";
 export type { TooltipProps } from "./tooltip";
 
-export { Skeleton, SkeletonText, SkeletonCard, SkeletonAvatar } from "./skeleton";
-export type { SkeletonProps } from "./skeleton";
+export { Skeleton, ArticleCardSkeleton, VideoCardSkeleton, TrendingItemSkeleton, HeroSkeleton, BreakingNewsTickerSkeleton } from "./skeleton";
 
 export { Pagination } from "./pagination";
 export type { PaginationProps } from "./pagination";
+
+export { Progress } from "./progress";
 
 export { ToastProvider, useToast } from "./toast";
 
