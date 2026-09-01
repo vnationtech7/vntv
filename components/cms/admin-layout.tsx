@@ -25,6 +25,7 @@ import {
   LogOut,
   Activity,
   Mail,
+  Shield,
   type LucideIcon,
 } from "lucide-react";
 import { Award } from "lucide-react";
@@ -169,6 +170,12 @@ const navigationItems: NavItem[] = [
     label: "Users & Roles",
     href: "/admin/users",
     icon: Users,
+    roles: ["super_admin"],
+  },
+  {
+    label: "Audit Logs",
+    href: "/admin/audit-logs",
+    icon: Shield,
     roles: ["super_admin"],
   },
   {
