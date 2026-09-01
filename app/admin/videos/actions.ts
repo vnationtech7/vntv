@@ -53,7 +53,8 @@ export type VideoFormData = {
  */
 export async function getVideos(filters?: {
   status?: string;
-  videoType?: string;
+  video_type?: string;
+  source_type?: string;
   search?: string;
   limit?: number;
   offset?: number;
@@ -73,8 +74,12 @@ export async function getVideos(filters?: {
       query = query.eq("status", filters.status);
     }
 
-    if (filters?.videoType) {
-      query = query.eq("video_type", filters.videoType);
+    if (filters?.video_type) {
+      query = query.eq("video_type", filters.video_type);
+    }
+
+    if (filters?.source_type) {
+      query = query.eq("source_type", filters.source_type);
     }
 
     if (filters?.search) {

@@ -38,19 +38,44 @@ export function ProfileForm({ profile }: ProfileFormProps) {
     setSuccess(null);
 
     const formData = new FormData(e.currentTarget);
+    const newsletterEnabled = formData.get("newsletter") === "on";
 
+    // Update profile
     // @ts-ignore - Database schema types
     const result = await updateProfile({
       full_name: formData.get("fullName") as string,
-      newsletter_subscribed: formData.get("newsletter") === "on",
+      newsletter_subscribed: newsletterEnabled,
     });
 
     if (result.error) {
       setError(result.error);
-    } else {
-      setSuccess("Profile updated successfully");
+      setLoading(false);
+      return;
     }
 
+    // Sync newsletter subscription with newsletter_subscribers table
+    try {
+      const response = await fetch("/api/sync-newsletter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: profile.email,
+          enabled: newsletterEnabled,
+        }),
+      });
+
+      const syncResult = await response.json();
+      
+      if (!syncResult.success) {
+        console.error("Newsletter sync error:", syncResult.error);
+        // Don't show error to user - profile update succeeded
+      }
+    } catch (err) {
+      console.error("Newsletter sync failed:", err);
+      // Don't show error to user - profile update succeeded
+    }
+
+    setSuccess("Profile updated successfully");
     setLoading(false);
   }
 

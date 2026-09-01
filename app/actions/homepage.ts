@@ -401,78 +401,86 @@ export async function getLatestArticles(limit: number = 6) {
 }
 
 /**
- * Get trending articles AND RSS items (by view count/recency from last 7 days)
+ * Get trending articles using advanced algorithm
+ * Score = views (70%) + shares (20%) + recency (10%)
  */
 export async function getTrendingArticles(limit: number = 5) {
   const supabase = await createClient();
 
   try {
-    // Get articles published in the last 7 days, sorted by view count
+    // Get articles from last 7 days
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-    const { data: articles, error: articlesError } = await supabase
+    const { data: articles, error } = await supabase
       .from("articles")
       .select("id, title, slug, published_at, view_count")
       .eq("status", "published")
       .not("published_at", "is", null)
       .gte("published_at", sevenDaysAgo.toISOString())
-      .gt("view_count", 0)
-      .order("view_count", { ascending: false })
-      .limit(limit);
+      .gt("view_count", 0);
 
-    // Get recent approved RSS items (last 7 days)
-    const { data: rssItems, error: rssError } = await supabase
-      .from("rss_items")
-      .select("id, title, published_at, fetched_at")
-      .eq("status", "approved")
-      .gte("fetched_at", sevenDaysAgo.toISOString())
-      .order("fetched_at", { ascending: false })
-      .limit(limit);
-
-    if (articlesError) {
-      console.error("Error fetching trending articles:", articlesError);
-    }
-    if (rssError) {
-      console.error("Error fetching RSS items:", rssError);
+    if (error) {
+      console.error("Error fetching articles for trending:", error);
+      return { data: [], error: error.message };
     }
 
-    // Combine both
-    const allContent: any[] = [];
-
-    if (articles) {
-      articles.forEach(article => {
-        allContent.push({
-          ...article,
-          content_type: 'article',
-          score: article.view_count || 0,
-        });
-      });
+    if (!articles || articles.length === 0) {
+      return { data: [], error: null };
     }
 
-    if (rssItems) {
-      rssItems.forEach(item => {
-        allContent.push({
-          id: item.id,
-          title: item.title,
-          slug: item.id,
-          published_at: item.published_at || item.fetched_at,
-          content_type: 'rss',
-          score: 1, // RSS items don't have view counts, give them base score
-        });
-      });
-    }
+    // Get share counts for these articles
+    const articleIds = articles.map(a => a.id);
+    const { data: shares } = await supabase
+      .from("social_shares")
+      .select("content_id")
+      .eq("content_type", "article")
+      .in("content_id", articleIds);
 
-    // Sort by score (articles with high views first, then recent RSS items)
-    allContent.sort((a, b) => b.score - a.score);
+    // Count shares per article
+    const shareCount = new Map<string, number>();
+    shares?.forEach(share => {
+      shareCount.set(share.content_id, (shareCount.get(share.content_id) || 0) + 1);
+    });
 
-    // Take only the limit
-    const limitedContent = allContent.slice(0, limit);
+    // Calculate trending score for each article
+    const now = Date.now();
+    const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
 
-    return { data: limitedContent, error: null };
+    const articlesWithScores = articles.map(article => {
+      const views = article.view_count || 0;
+      const sharesNum = shareCount.get(article.id) || 0;
+      
+      // Recency score (newer = higher score)
+      const articleAge = now - new Date(article.published_at!).getTime();
+      const recencyScore = Math.max(0, (maxAge - articleAge) / maxAge) * 100;
+
+      // Weighted scoring: views (70%) + shares (20%) + recency (10%)
+      const viewScore = views * 0.7;
+      const shareScore = sharesNum * 10 * 0.2;
+      const recencyWeighted = recencyScore * 0.1;
+
+      const trendingScore = viewScore + shareScore + recencyWeighted;
+
+      return {
+        id: article.id,
+        title: article.title,
+        slug: article.slug,
+        published_at: article.published_at,
+        view_count: article.view_count,
+        content_type: 'article',
+        score: Math.round(trendingScore * 100) / 100,
+      };
+    });
+
+    // Sort by trending score and take top N
+    articlesWithScores.sort((a, b) => b.score - a.score);
+    const topArticles = articlesWithScores.slice(0, limit);
+
+    return { data: topArticles, error: null };
   } catch (err) {
     console.error("Unexpected error fetching trending content:", err);
-    return { data: null, error: "Failed to fetch trending content" };
+    return { data: [], error: "Failed to fetch trending content" };
   }
 }
 

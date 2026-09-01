@@ -23,7 +23,7 @@ export async function OriginalsSection() {
 
   if (featuredProgramme) {
     const { data: episodes } = await getProgrammeEpisodes(featuredProgramme.id);
-    const publishedEpisodes = episodes?.filter((ep) => ep.is_published) || [];
+    const publishedEpisodes = episodes?.filter((ep) => ep.published_at !== null && ep.published_at !== undefined) || [];
     latestEpisode = publishedEpisodes.length > 0 ? publishedEpisodes[0] : null;
   }
 

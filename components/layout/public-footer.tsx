@@ -98,7 +98,7 @@ export function PublicFooter() {
               Stay Informed
             </h3>
             <p className="text-sm text-text-secondary mb-6">
-              Get the latest African news delivered to your inbox
+              Get the latest African news delivered to your inbox. Join thousands of readers.
             </p>
             <form onSubmit={handleSubscribe} className="flex gap-2 max-w-md mx-auto">
               <Input
@@ -115,8 +115,13 @@ export function PublicFooter() {
               </Button>
             </form>
             {message && (
-              <p className={`text-sm mt-3 ${isError ? "text-red-500" : "text-green-500"}`}>
+              <p className={`text-sm mt-3 ${isError ? "text-red-500" : "text-green-600 dark:text-green-400"}`}>
                 {message}
+              </p>
+            )}
+            {!message && (
+              <p className="text-xs text-text-tertiary mt-3">
+                We respect your privacy. Unsubscribe anytime.
               </p>
             )}
           </div>

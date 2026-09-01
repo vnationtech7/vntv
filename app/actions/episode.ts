@@ -12,6 +12,7 @@ export type EpisodeData = {
   episode_number: number;
   description: string | null;
   video_id: string | null;
+  url: string | null;
   thumbnail_id: string | null;
   published_at: string | null;
   created_at: string;
@@ -45,7 +46,7 @@ export async function getProgrammeEpisodes(programmeId: string) {
   try {
     const { data: episodes, error } = await supabase
       .from("episodes")
-      .select("id, programme_id, title, slug, episode_number, description, video_id, thumbnail_id, published_at, created_at, updated_at")
+      .select("id, programme_id, title, slug, episode_number, description, video_id, url, thumbnail_id, published_at, created_at, updated_at")
       .eq("programme_id", programmeId)
       .order("episode_number", { ascending: true });
 
@@ -96,7 +97,7 @@ export async function getEpisode(id: string) {
   try {
     const { data: episode, error } = await supabase
       .from("episodes")
-      .select("id, programme_id, title, slug, episode_number, description, video_id, thumbnail_id, published_at, created_at, updated_at")
+      .select("id, programme_id, title, slug, episode_number, description, video_id, url, thumbnail_id, published_at, created_at, updated_at")
       .eq("id", id)
       .single();
 
@@ -148,7 +149,7 @@ export async function getEpisodeBySlug(programmeSlug: string, episodeSlug: strin
     // Get episode
     const { data: episode, error } = await supabase
       .from("episodes")
-      .select("id, programme_id, title, slug, episode_number, description, video_id, thumbnail_id, published_at")
+      .select("id, programme_id, title, slug, episode_number, description, video_id, url, thumbnail_id, published_at")
       .eq("programme_id", programme.id)
       .eq("slug", episodeSlug)
       .not("published_at", "is", null)
@@ -189,6 +190,7 @@ export async function createEpisode(data: {
   episode_number: number;
   description?: string;
   video_id?: string;
+  url?: string;
   thumbnail_id?: string;
   published_at?: string;
 }) {
@@ -204,6 +206,7 @@ export async function createEpisode(data: {
         episode_number: data.episode_number,
         description: data.description || null,
         video_id: data.video_id || null,
+        url: data.url || null,
         thumbnail_id: data.thumbnail_id || null,
         published_at: data.published_at || null,
       })
@@ -233,20 +236,33 @@ export async function updateEpisode(
     slug?: string;
     episode_number?: number;
     description?: string;
-    video_id?: string;
-    thumbnail_id?: string;
-    published_at?: string;
+    video_id?: string | null;
+    url?: string | null;
+    thumbnail_id?: string | null;
+    published_at?: string | null;
   }
 ) {
   const supabase = await createClient();
 
   try {
+    // Build update object with only provided fields
+    const updateData: any = {
+      updated_at: new Date().toISOString(),
+    };
+
+    // Only include fields that are explicitly provided
+    if (data.title !== undefined) updateData.title = data.title;
+    if (data.slug !== undefined) updateData.slug = data.slug;
+    if (data.episode_number !== undefined) updateData.episode_number = data.episode_number;
+    if (data.description !== undefined) updateData.description = data.description;
+    if (data.video_id !== undefined) updateData.video_id = data.video_id || null;
+    if (data.url !== undefined) updateData.url = data.url || null;
+    if (data.thumbnail_id !== undefined) updateData.thumbnail_id = data.thumbnail_id || null;
+    if (data.published_at !== undefined) updateData.published_at = data.published_at || null;
+
     const { data: episode, error } = await supabase
       .from("episodes")
-      .update({
-        ...data,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq("id", id)
       .select()
       .single();

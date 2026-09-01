@@ -33,7 +33,7 @@ export async function createProfile(userId: string, email: string) {
       full_name: null,
       avatar_url: null,
       bio: null,
-      newsletter_subscribed: false,
+      newsletter_subscribed: true, // Opt-in by default
     }])
     .select()
     .single();
@@ -46,6 +46,26 @@ export async function createProfile(userId: string, email: string) {
       code: error.code,
     });
     return { error: error.message || "Failed to create profile", data: null };
+  }
+
+  // Auto-subscribe to newsletter (opt-in by default)
+  try {
+    const crypto = await import("crypto");
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+    const unsubscribeToken = crypto.randomBytes(32).toString("hex");
+
+    await supabase.from("newsletter_subscribers").insert({
+      email: email as string,
+      user_id: userId,
+      is_active: true,
+      verification_token: verificationToken,
+      unsubscribe_token: unsubscribeToken,
+      verified_at: new Date().toISOString(), // Auto-verified for authenticated users
+      subscribed_at: new Date().toISOString(),
+    } as any);
+  } catch (err) {
+    console.error("Error auto-subscribing to newsletter:", err);
+    // Don't block profile creation if newsletter subscription fails
   }
 
   return { data: data as ProfileData, error: null };

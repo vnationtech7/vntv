@@ -24,6 +24,8 @@ import Link from "next/link";
 
 import { RequireVideoEditor } from "@/components/auth/require-role-client";
 type FilterStatus = "all" | "draft" | "published";
+type FilterVideoType = "all" | "short" | "news" | "breaking" | "interview" | "documentary" | "original" | "standalone";
+type FilterSourceType = "all" | "youtube" | "upload" | "external";
 
 export default function VideosPage() {
   return (
@@ -43,6 +45,8 @@ function VideosPageContent() {
   });
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterStatus>("all");
+  const [videoTypeFilter, setVideoTypeFilter] = useState<FilterVideoType>("all");
+  const [sourceTypeFilter, setSourceTypeFilter] = useState<FilterSourceType>("all");
   const [search, setSearch] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [playingVideo, setPlayingVideo] = useState<Video | null>(null);
@@ -53,6 +57,14 @@ function VideosPageContent() {
 
     if (filter !== "all") {
       filters.status = filter;
+    }
+
+    if (videoTypeFilter !== "all") {
+      filters.video_type = videoTypeFilter;
+    }
+
+    if (sourceTypeFilter !== "all") {
+      filters.source_type = sourceTypeFilter;
     }
 
     if (search.trim()) {
@@ -76,7 +88,7 @@ function VideosPageContent() {
   useEffect(() => {
     loadVideos();
     loadStats();
-  }, [filter]);
+  }, [filter, videoTypeFilter, sourceTypeFilter]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -202,8 +214,10 @@ function VideosPageContent() {
       </div>
 
       {/* Filters and Search */}
-      <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex gap-2">
+      <div className="mt-6 space-y-4">
+        {/* Status Filter */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm font-medium text-text-secondary">Status:</span>
           <Button
             variant={filter === "all" ? "primary" : "outline"}
             size="sm"
@@ -227,8 +241,102 @@ function VideosPageContent() {
           </Button>
         </div>
 
+        {/* Video Type Filter */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm font-medium text-text-secondary">Type:</span>
+          <Button
+            variant={videoTypeFilter === "all" ? "primary" : "outline"}
+            size="sm"
+            onClick={() => setVideoTypeFilter("all")}
+          >
+            All Types
+          </Button>
+          <Button
+            variant={videoTypeFilter === "short" ? "primary" : "outline"}
+            size="sm"
+            onClick={() => setVideoTypeFilter("short")}
+          >
+            Shorts
+          </Button>
+          <Button
+            variant={videoTypeFilter === "news" ? "primary" : "outline"}
+            size="sm"
+            onClick={() => setVideoTypeFilter("news")}
+          >
+            News
+          </Button>
+          <Button
+            variant={videoTypeFilter === "breaking" ? "primary" : "outline"}
+            size="sm"
+            onClick={() => setVideoTypeFilter("breaking")}
+          >
+            Breaking
+          </Button>
+          <Button
+            variant={videoTypeFilter === "interview" ? "primary" : "outline"}
+            size="sm"
+            onClick={() => setVideoTypeFilter("interview")}
+          >
+            Interview
+          </Button>
+          <Button
+            variant={videoTypeFilter === "documentary" ? "primary" : "outline"}
+            size="sm"
+            onClick={() => setVideoTypeFilter("documentary")}
+          >
+            Documentary
+          </Button>
+          <Button
+            variant={videoTypeFilter === "original" ? "primary" : "outline"}
+            size="sm"
+            onClick={() => setVideoTypeFilter("original")}
+          >
+            VNTV Original
+          </Button>
+          <Button
+            variant={videoTypeFilter === "standalone" ? "primary" : "outline"}
+            size="sm"
+            onClick={() => setVideoTypeFilter("standalone")}
+          >
+            Standalone
+          </Button>
+        </div>
+
+        {/* Source Type Filter */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm font-medium text-text-secondary">Source:</span>
+          <Button
+            variant={sourceTypeFilter === "all" ? "primary" : "outline"}
+            size="sm"
+            onClick={() => setSourceTypeFilter("all")}
+          >
+            All Sources
+          </Button>
+          <Button
+            variant={sourceTypeFilter === "youtube" ? "primary" : "outline"}
+            size="sm"
+            onClick={() => setSourceTypeFilter("youtube")}
+          >
+            YouTube Only
+          </Button>
+          <Button
+            variant={sourceTypeFilter === "upload" ? "primary" : "outline"}
+            size="sm"
+            onClick={() => setSourceTypeFilter("upload")}
+          >
+            Uploaded
+          </Button>
+          <Button
+            variant={sourceTypeFilter === "external" ? "primary" : "outline"}
+            size="sm"
+            onClick={() => setSourceTypeFilter("external")}
+          >
+            External
+          </Button>
+        </div>
+
         {/* Search */}
-        <div className="relative flex-1 sm:w-64">
+        <div className="relative w-full sm:w-96">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary" />
           <Input
             placeholder="Search videos..."

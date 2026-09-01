@@ -35,7 +35,7 @@ export function LatestNewsSection({ articles }: LatestNewsSectionProps) {
           LATEST NEWS
         </h2>
         <Link
-          href="/news"
+          href="/rss-feeds"
           className="flex items-center gap-1 text-xs font-bold text-[--muted] hover:text-[--red] transition-colors"
         >
           View All

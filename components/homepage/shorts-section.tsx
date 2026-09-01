@@ -49,6 +49,7 @@ export function ShortsSection({ shorts }: ShortsSectionProps) {
     // Priority 1: Custom thumbnail
     if (short.thumbnail?.storage_path) {
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      // Thumbnails are stored in media bucket
       return `${supabaseUrl}/storage/v1/object/public/media/${short.thumbnail.storage_path}`;
     }
     
@@ -56,7 +57,7 @@ export function ShortsSection({ shorts }: ShortsSectionProps) {
     if (short.source_type === "youtube" && short.source_url) {
       const videoId = extractYouTubeId(short.source_url);
       if (videoId) {
-        return getYouTubeThumbnail(videoId, "hq");
+        return getYouTubeThumbnail(videoId, "maxres"); // Higher quality thumbnail
       }
     }
     
@@ -80,56 +81,71 @@ export function ShortsSection({ shorts }: ShortsSectionProps) {
         </Link>
       </div>
 
-      {/* Shorts Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+      {/* Shorts Grid - Bigger cards (4 columns instead of 6) */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
         {shorts.map((short) => {
           const thumbnailUrl = getThumbnail(short);
           const isUploadedVideo = short.source_type === "upload" && short.source_url;
+          const isYouTube = short.source_type === "youtube";
           
           return (
-            <Link
+            <div
               key={short.id}
-              href={`/video/${short.slug}`}
               className="group block"
-              onMouseEnter={() => handleMouseEnter(short.id)}
-              onMouseLeave={() => handleMouseLeave(short.id)}
+              onMouseEnter={() => !isYouTube && handleMouseEnter(short.id)}
+              onMouseLeave={() => !isYouTube && handleMouseLeave(short.id)}
             >
-              <div className="relative aspect-[9/16] overflow-hidden rounded-lg border border-[--border] bg-[--panel] transition-all hover:border-[--red] hover:shadow-lg">
-                {/* Video or Thumbnail */}
-                {isUploadedVideo ? (
-                  <>
-                    {/* Video element for uploaded videos */}
-                    <video
-                      ref={(el) => {
-                        videoRefs.current[short.id] = el;
-                      }}
-                      src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/media/${short.source_url}`}
-                      poster={thumbnailUrl || undefined}
-                      loop
-                      muted
-                      playsInline
-                      className="absolute inset-0 h-full w-full object-cover"
-                    />
-                    {/* Poster/Thumbnail overlay (visible when not playing) */}
-                    {hoveredId !== short.id && thumbnailUrl && (
-                      <img
-                        src={thumbnailUrl}
-                        alt={short.title}
+              <Link
+                href={`/video/${short.slug}`}
+                className="block"
+              >
+                <div className="relative aspect-[9/16] overflow-hidden rounded-lg border border-[--border] bg-[--panel] transition-all hover:border-[--red] hover:shadow-lg">
+                  {/* Video or Thumbnail */}
+                  {isUploadedVideo ? (
+                    <>
+                      {/* Video element for uploaded videos */}
+                      <video
+                        ref={(el) => {
+                          videoRefs.current[short.id] = el;
+                        }}
+                        src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${short.source_url}`}
+                        poster={thumbnailUrl || undefined}
+                        loop
+                        muted
+                        playsInline
+                        preload="metadata"
                         className="absolute inset-0 h-full w-full object-cover"
                       />
-                    )}
-                  </>
-                ) : thumbnailUrl ? (
-                  <img
-                    src={thumbnailUrl}
-                    alt={short.title}
-                    className="absolute inset-0 h-full w-full object-cover"
-                  />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[--panel] to-[--panel-2]">
-                    <Play className="h-12 w-12 text-[--muted-2] opacity-20" />
-                  </div>
-                )}
+                      {/* Poster/Thumbnail overlay (visible when not playing) */}
+                      {hoveredId !== short.id && thumbnailUrl && (
+                        <img
+                          src={thumbnailUrl}
+                          alt={short.title}
+                          className="absolute inset-0 h-full w-full object-cover"
+                        />
+                      )}
+                    </>
+                  ) : thumbnailUrl ? (
+                    <img
+                      src={thumbnailUrl}
+                      alt={short.title}
+                      className="absolute inset-0 h-full w-full object-cover"
+                      onError={(e) => {
+                        // Fallback to hqdefault if maxres fails
+                        const img = e.target as HTMLImageElement;
+                        if (img.src.includes('maxresdefault')) {
+                          const videoId = extractYouTubeId(short.source_url);
+                          if (videoId) {
+                            img.src = getYouTubeThumbnail(videoId, "hq") || '';
+                          }
+                        }
+                      }}
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[--panel] to-[--panel-2]">
+                      <Play className="h-12 w-12 text-[--muted-2] opacity-20" />
+                    </div>
+                  )}
 
                 {/* Gradient Overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
@@ -158,6 +174,7 @@ export function ShortsSection({ shorts }: ShortsSectionProps) {
                 </div>
               </div>
             </Link>
+            </div>
           );
         })}
       </div>

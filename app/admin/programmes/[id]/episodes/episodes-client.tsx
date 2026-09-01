@@ -8,6 +8,37 @@ import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { VideoPlayer } from "@/components/video/video-player";
 
+// Helper function to extract YouTube thumbnail
+function getYouTubeThumbnail(url: string): string | null {
+  try {
+    // Extract video ID from various YouTube URL formats
+    let videoId = null;
+    
+    // Standard watch URL: https://www.youtube.com/watch?v=VIDEO_ID
+    if (url.includes('youtube.com/watch')) {
+      const urlParams = new URLSearchParams(url.split('?')[1]);
+      videoId = urlParams.get('v');
+    }
+    // Short URL: https://youtu.be/VIDEO_ID
+    else if (url.includes('youtu.be/')) {
+      videoId = url.split('youtu.be/')[1]?.split('?')[0];
+    }
+    // Shorts URL: https://www.youtube.com/shorts/VIDEO_ID
+    else if (url.includes('youtube.com/shorts/')) {
+      videoId = url.split('shorts/')[1]?.split('?')[0];
+    }
+
+    if (videoId) {
+      // Use maxresdefault for best quality, fallback to hqdefault
+      return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+    }
+  } catch (error) {
+    console.error('Error extracting YouTube thumbnail:', error);
+  }
+  
+  return null;
+}
+
 interface EpisodeWithVideo {
   id: string;
   title: string;
@@ -15,6 +46,7 @@ interface EpisodeWithVideo {
   description: string | null;
   published_at: string | null;
   created_at: string;
+  url?: string | null;
   video?: {
     id: string;
     title: string;
@@ -78,6 +110,8 @@ export default function EpisodesPageClient({
             {episodes.map((episode) => {
               const thumbnailUrl = episode.thumbnail
                 ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${episode.thumbnail.storage_path}`
+                : episode.url && episode.url.includes('youtube')
+                ? getYouTubeThumbnail(episode.url)
                 : null;
 
               return (
@@ -90,8 +124,8 @@ export default function EpisodesPageClient({
                     <div className="flex-shrink-0">
                       {thumbnailUrl ? (
                         <button
-                          onClick={() => episode.video && setPreviewEpisode(episode)}
-                          disabled={!episode.video}
+                          onClick={() => (episode.video || episode.url) && setPreviewEpisode(episode)}
+                          disabled={!episode.video && !episode.url}
                           className="relative w-40 aspect-video rounded overflow-hidden group disabled:cursor-default"
                         >
                           <img
@@ -99,7 +133,7 @@ export default function EpisodesPageClient({
                             alt={episode.title}
                             className="w-full h-full object-cover"
                           />
-                          {episode.video && (
+                          {(episode.video || episode.url) && (
                             <div className="absolute inset-0 bg-black/30 group-hover:bg-black/50 flex items-center justify-center transition-colors">
                               <Play className="w-8 h-8 text-white" />
                             </div>
@@ -134,7 +168,7 @@ export default function EpisodesPageClient({
                                 Draft
                               </span>
                             )}
-                            {episode.video && (
+                            {(episode.video || episode.url) && (
                               <button
                                 onClick={() => setPreviewEpisode(episode)}
                                 className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-accent-yellow/10 text-accent-yellow hover:bg-accent-yellow/20 text-xs font-medium transition-colors"
@@ -191,7 +225,7 @@ export default function EpisodesPageClient({
       </div>
 
       {/* Video Preview Modal */}
-      {previewEpisode && previewEpisode.video && (
+      {previewEpisode && (previewEpisode.video || previewEpisode.url) && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
           <div className="relative w-full max-w-4xl bg-surface-primary rounded-lg overflow-hidden">
             {/* Header */}
@@ -201,7 +235,7 @@ export default function EpisodesPageClient({
                   Episode {previewEpisode.episode_number}: {previewEpisode.title}
                 </h3>
                 <p className="text-sm text-text-secondary">
-                  {previewEpisode.video.title}
+                  {previewEpisode.video?.title || 'Video Preview'}
                 </p>
               </div>
               <button
@@ -215,11 +249,13 @@ export default function EpisodesPageClient({
             {/* Video Player */}
             <div className="p-4">
               <VideoPlayer
-                src={previewEpisode.video.source_url}
-                type={previewEpisode.video.source_type}
+                src={previewEpisode.url || previewEpisode.video?.source_url || ''}
+                type={previewEpisode.url?.includes('youtube') ? 'youtube' : (previewEpisode.video?.source_type || 'external')}
                 poster={
                   previewEpisode.thumbnail
                     ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${previewEpisode.thumbnail.storage_path}`
+                    : previewEpisode.url
+                    ? getYouTubeThumbnail(previewEpisode.url) || undefined
                     : undefined
                 }
                 title={previewEpisode.title}

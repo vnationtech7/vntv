@@ -18,6 +18,24 @@ export type SearchResult = {
 };
 
 /**
+ * Track search query for analytics
+ */
+async function trackSearchQuery(query: string, resultsCount: number) {
+  try {
+    // Use absolute URL for server-side fetch
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+    await fetch(`${baseUrl}/api/track/search`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query, resultsCount }),
+    });
+  } catch (error) {
+    // Silent fail - don't block search if tracking fails
+    console.error("Failed to track search:", error);
+  }
+}
+
+/**
  * Global search across articles, videos, and authors
  */
 export async function globalSearch(
@@ -153,6 +171,9 @@ export async function globalSearch(
       }
     }
 
+    // Track search query (async, don't wait)
+    trackSearchQuery(searchQuery, results.length);
+
     // Apply pagination if filtering by specific type
     if (type !== "all") {
       const from = (page - 1) * limit;
@@ -181,27 +202,60 @@ export async function getSearchSuggestions(query: string) {
   const searchQuery = query.trim();
 
   try {
-    // Get article and video titles
+    // Get article and video titles with images - search by title, excerpt, and description
     const [articlesResult, videosResult] = await Promise.all([
       supabase
         .from("articles")
-        .select("title, slug")
+        .select("id, title, slug, excerpt, featured_image_id")
         .eq("status", "published")
         .not("published_at", "is", null)
-        .ilike("title", `%${searchQuery}%`)
+        .or(`title.ilike.%${searchQuery}%,excerpt.ilike.%${searchQuery}%`)
+        .order("published_at", { ascending: false })
         .limit(5),
       supabase
         .from("videos")
-        .select("title, slug")
+        .select("id, title, slug, description, featured_image_id")
         .eq("status", "published")
         .not("published_at", "is", null)
-        .ilike("title", `%${searchQuery}%`)
+        .or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`)
+        .order("published_at", { ascending: false })
         .limit(3),
     ]);
 
+    // Collect all image IDs
+    const allImageIds = [
+      ...(articlesResult.data || []).map((a: any) => a.featured_image_id),
+      ...(videosResult.data || []).map((v: any) => v.featured_image_id),
+    ].filter(Boolean);
+
+    // Fetch all images at once
+    let imagesMap = new Map();
+    if (allImageIds.length > 0) {
+      const { data: images } = await supabase
+        .from("media_assets")
+        .select("id, storage_path")
+        .in("id", allImageIds);
+      
+      if (images) {
+        imagesMap = new Map(images.map((img: any) => [img.id, img.storage_path]));
+      }
+    }
+
     const suggestions = [
-      ...(articlesResult.data || []).map((item: any) => ({ title: item.title, slug: item.slug, type: "article" })),
-      ...(videosResult.data || []).map((item: any) => ({ title: item.title, slug: item.slug, type: "video" })),
+      ...(articlesResult.data || []).map((item: any) => ({
+        title: item.title,
+        slug: item.slug,
+        type: "article",
+        excerpt: item.excerpt,
+        image_path: item.featured_image_id ? imagesMap.get(item.featured_image_id) || null : null,
+      })),
+      ...(videosResult.data || []).map((item: any) => ({
+        title: item.title,
+        slug: item.slug,
+        type: "video",
+        description: item.description,
+        image_path: item.featured_image_id ? imagesMap.get(item.featured_image_id) || null : null,
+      })),
     ].slice(0, 8);
 
     return { data: suggestions, error: null };

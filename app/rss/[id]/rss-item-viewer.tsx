@@ -67,11 +67,11 @@ export default function RssItemViewer({ item }: RssItemViewerProps) {
     <div className="max-w-4xl mx-auto px-6 py-8">
       {/* Back Button */}
       <Link
-        href="/"
+        href="/rss-feeds"
         className="inline-flex items-center gap-2 text-gray-600 hover:text-red-600 mb-6 transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
-        Back to Home
+        Back to RSS Feeds
       </Link>
 
       {/* Source Badge */}
@@ -194,6 +194,36 @@ export default function RssItemViewer({ item }: RssItemViewerProps) {
           <ExternalLink className="w-5 h-5" />
           Read Full Story at {item.feed?.source_name || "Original Source"}
         </a>
+      </div>
+
+      {/* Embedded Browser - iFrame */}
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold mb-4">Read on VNTV</h2>
+        <div className="bg-gray-100 border border-gray-300 rounded-lg overflow-hidden">
+          <div className="bg-gray-200 px-4 py-3 border-b border-gray-300 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-red-500"></div>
+              <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+              <div className="w-3 h-3 rounded-full bg-green-500"></div>
+            </div>
+            <div className="flex-1 mx-4">
+              <div className="bg-white rounded px-3 py-1.5 text-xs text-gray-600 truncate">
+                {item.url}
+              </div>
+            </div>
+          </div>
+
+          {/* iFrame Content */}
+          <div className="relative" style={{ height: "calc(100vh - 200px)", minHeight: "600px" }}>
+            <iframe
+              src={item.url}
+              title={item.title}
+              className="w-full h-full"
+              sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+              loading="lazy"
+            />
+          </div>
+        </div>
       </div>
 
       {/* Source Attribution */}

@@ -89,7 +89,7 @@ export default async function ProgrammePage({ params }: ProgrammePageProps) {
   }
 
   const programme = programmeResult.data;
-  const episodes = (episodesResult.data || []).filter((ep) => ep.is_published);
+  const episodes = (episodesResult.data || []).filter((ep) => ep.published_at !== null && ep.published_at !== undefined);
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const posterUrl = programme.poster_image

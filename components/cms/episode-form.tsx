@@ -27,9 +27,13 @@ export function EpisodeForm({ programmeId, episode, mode, suggestedEpisodeNumber
     episode_number: episode?.episode_number || suggestedEpisodeNumber || 1,
     description: episode?.description || "",
     video_id: episode?.video_id || "",
+    url: episode?.url || "",
     thumbnail_id: episode?.thumbnail_id || "",
     published_at: episode?.published_at || null,
   });
+
+  // Debug: Log episode data on mount
+  console.log("Episode data loaded:", episode);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,16 +43,27 @@ export function EpisodeForm({ programmeId, episode, mode, suggestedEpisodeNumber
     try {
       let result;
 
+      // Prepare data, converting empty strings to null
+      const submitData = {
+        ...formData,
+        video_id: formData.video_id || null,
+        url: formData.url || null,
+        thumbnail_id: formData.thumbnail_id || null,
+        published_at: formData.published_at || null,
+      };
+
+      console.log("Submitting episode data:", submitData);
+
       if (mode === "create") {
         result = await createEpisode({
           programme_id: programmeId,
-          ...formData,
+          ...submitData,
         });
       } else {
-        result = await updateEpisode(episode!.id, {
-          ...formData,
-        });
+        result = await updateEpisode(episode!.id, submitData);
       }
+
+      console.log("Episode save result:", result);
 
       if (result.error) {
         setError(result.error);
@@ -163,19 +178,30 @@ export function EpisodeForm({ programmeId, episode, mode, suggestedEpisodeNumber
         />
       </div>
 
-      {/* Video */}
-      <VideoUploadOrSearch
-        value={formData.video_id}
-        onChange={(value) => setFormData({ ...formData, video_id: value })}
-        label="Episode Video"
-      />
+      {/* Simple Video URL Field */}
+      <div>
+        <label htmlFor="url" className="block text-sm font-medium text-text-primary mb-2">
+          Video URL
+        </label>
+        <input
+          type="url"
+          id="url"
+          value={formData.url}
+          onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+          className="w-full px-4 py-2 rounded-lg bg-surface-secondary border border-border text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-yellow"
+          placeholder="https://youtube.com/watch?v=... or https://vimeo.com/..."
+        />
+        <p className="text-xs text-text-tertiary mt-1">
+          Enter a YouTube or Vimeo URL for this episode
+        </p>
+      </div>
 
       {/* Thumbnail */}
       <MediaUploadOrSearch
         value={formData.thumbnail_id}
         onChange={(value) => setFormData({ ...formData, thumbnail_id: value })}
         mediaType="image"
-        label="Custom Thumbnail (Optional)"
+        label="Episode Thumbnail (Optional)"
         uploadLabel="Upload Thumbnail"
         searchPlaceholder="Search for thumbnail image..."
         accept="image/*"
