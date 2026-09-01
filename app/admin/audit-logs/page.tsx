@@ -8,6 +8,8 @@ import { PageHeader } from "@/components/cms/page-header";
 import { AuditLogsClient } from "./audit-logs-client";
 import { getAuditLogs, getAuditUsers } from "@/app/actions/audit";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "Audit Logs | VNTV Admin",
   description: "View security audit trail and system activity logs",
