@@ -24,6 +24,7 @@ import {
   ChevronRight,
   LogOut,
   Activity,
+  Mail,
   type LucideIcon,
 } from "lucide-react";
 import { Award } from "lucide-react";
@@ -156,6 +157,12 @@ const navigationItems: NavItem[] = [
     label: "Analytics",
     href: "/admin/analytics",
     icon: BarChart,
+    roles: ["super_admin", "editor"],
+  },
+  {
+    label: "Newsletter",
+    href: "/admin/newsletter",
+    icon: Mail,
     roles: ["super_admin", "editor"],
   },
   {
