@@ -42,7 +42,7 @@ export function ThemeToggleCompact() {
   return (
     <button
       onClick={toggleTheme}
-      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-sm bg-background-panel border border-border hover:bg-background-panel-2 transition-colors duration-base text-caption-sm font-bold uppercase tracking-wide focus-visible:outline focus-visible:outline-2 focus-visible:outline-vntv-red focus-visible:outline-offset-2"
+      className="inline-flex items-center gap-2 px-2 py-1 rounded transition-colors duration-base text-xs font-medium text-text-secondary hover:text-text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-vntv-red focus-visible:outline-offset-2"
       aria-label={`Switch to ${resolvedTheme === "light" ? "dark" : "light"} theme`}
       type="button"
     >

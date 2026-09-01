@@ -61,11 +61,11 @@ export function TrendingItem({
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-start gap-2">
-            <h4 className="mb-1 line-clamp-2 text-sm font-semibold text-text-primary group-hover:text-vntv-red transition-colors flex-1">
+            <h4 className="mb-1 line-clamp-2 text-sm font-semibold text-text-primary group-hover:text-text-primary transition-colors flex-1">
               {title}
             </h4>
             {contentType === "rss" && (
-              <ExternalLink className="w-3 h-3 text-blue-600 flex-shrink-0 mt-0.5" />
+              <ExternalLink className="w-3 h-3 text-text-secondary flex-shrink-0 mt-0.5" />
             )}
           </div>
           <div className="flex items-center gap-2 text-xs text-text-tertiary">

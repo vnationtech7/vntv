@@ -86,7 +86,7 @@ export function ContentCard({
                 className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
               />
               {contentType === "rss" && (
-                <div className="absolute top-1 right-1 bg-blue-600 rounded-full p-1">
+                <div className="absolute top-1 right-1 bg-black/60 backdrop-blur-sm rounded-full p-1">
                   <ExternalLink className="w-3 h-3 text-white" />
                 </div>
               )}
@@ -101,11 +101,11 @@ export function ContentCard({
               </span>
             )}
             {contentType === "rss" && sourceName && (
-              <span className="mb-1 inline-block text-xs font-medium text-blue-600">
+              <span className="mb-1 inline-block text-xs font-medium text-text-secondary">
                 {sourceName}
               </span>
             )}
-            <h3 className="mb-2 line-clamp-2 text-base font-semibold text-text-primary group-hover:text-vntv-red transition-colors">
+            <h3 className="mb-2 line-clamp-2 text-base font-semibold text-text-primary group-hover:text-text-primary transition-colors">
               {title}
             </h3>
             <div className="flex items-center gap-2 text-xs text-text-tertiary">
@@ -127,7 +127,7 @@ export function ContentCard({
   if (variant === "compact") {
     return (
       <Link href={href} className="group block">
-        <div className="flex gap-3 rounded-lg border border-border bg-background-panel p-3 transition-all hover:border-vntv-red hover:shadow-md">
+        <div className="flex gap-3 rounded-lg border border-border bg-background-panel p-3 transition-all hover:border-border-hover hover:shadow-md hover:bg-surface-secondary">
           {finalImageUrl && (
             <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded">
               <img
@@ -136,7 +136,7 @@ export function ContentCard({
                 className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
               />
               {contentType === "rss" && (
-                <div className="absolute top-1 right-1 bg-blue-600 rounded-full p-0.5">
+                <div className="absolute top-1 right-1 bg-black/60 backdrop-blur-sm rounded-full p-0.5">
                   <ExternalLink className="w-2.5 h-2.5 text-white" />
                 </div>
               )}
@@ -149,11 +149,11 @@ export function ContentCard({
               </span>
             )}
             {contentType === "rss" && sourceName && (
-              <span className="mb-1 inline-block text-xs font-medium text-blue-600">
+              <span className="mb-1 inline-block text-xs font-medium text-text-secondary">
                 {sourceName}
               </span>
             )}
-            <h4 className="line-clamp-2 text-sm font-semibold text-text-primary group-hover:text-vntv-red transition-colors">
+            <h4 className="line-clamp-2 text-sm font-semibold text-text-primary group-hover:text-text-primary transition-colors">
               {title}
             </h4>
             {publishedAt && (
@@ -170,7 +170,7 @@ export function ContentCard({
   // Default variant (vertical card)
   return (
     <Link href={href} className="group block">
-      <article className="overflow-hidden rounded-lg border border-border bg-background-panel transition-all hover:border-vntv-red hover:shadow-lg">
+      <article className="overflow-hidden rounded-lg border border-border bg-background-panel transition-all hover:border-border-hover hover:shadow-lg hover:bg-surface-secondary">
         {/* Image */}
         {finalImageUrl ? (
           <div className="relative aspect-[16/9] overflow-hidden bg-background-secondary">
@@ -187,7 +187,7 @@ export function ContentCard({
               </div>
             )}
             {contentType === "rss" && (
-              <div className="absolute top-3 right-3 bg-blue-600 rounded-full p-1.5">
+              <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-sm rounded-full p-1.5">
                 <ExternalLink className="w-4 h-4 text-white" />
               </div>
             )}
@@ -208,7 +208,7 @@ export function ContentCard({
         {/* Content */}
         <div className="p-4">
           {contentType === "rss" && sourceName && (
-            <span className="inline-block mb-1 text-xs font-medium text-blue-600">
+            <span className="inline-block mb-1 text-xs font-medium text-text-secondary">
               {sourceName}
             </span>
           )}
