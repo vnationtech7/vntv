@@ -87,23 +87,6 @@ export function PublicHeader() {
 
             {/* Right Actions */}
             <div className="flex items-center gap-3 justify-end flex-1">
-              <a
-                href="https://vnationpic.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex h-8 items-center rounded group"
-                aria-label="VNation Homepage"
-              >
-                <Image
-                  src="/logo3.png"
-                  alt="VNation"
-                  width={32}
-                  height={32}
-                  quality={100}
-                  priority
-                  className="h-8 w-auto object-contain transition-transform duration-1000 ease-in-out group-hover:scale-110 group-hover:animate-pulse"
-                />
-              </a>
               <ThemeToggleCompact />
               <button
                 onClick={() => setSearchOpen(true)}
@@ -138,6 +121,23 @@ export function PublicHeader() {
                   Sign In
                 </Button>
               )}
+              <a
+                href="https://vnationpic.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex h-8 items-center rounded group"
+                aria-label="VNation Homepage"
+              >
+                <Image
+                  src="/logo3.png"
+                  alt="VNation"
+                  width={32}
+                  height={32}
+                  quality={100}
+                  priority
+                  className="h-8 w-auto object-contain transition-transform duration-1000 ease-in-out group-hover:scale-110 group-hover:animate-pulse"
+                />
+              </a>
             </div>
           </div>
         </div>
