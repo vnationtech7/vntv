@@ -84,12 +84,15 @@ export async function getAuditLogs(params: {
     }
 
     // Check if user is admin
-    const { data: roles } = await supabase
+    const { data: userRoles } = await supabase
       .from("user_roles")
-      .select("role_id")
+      .select(`
+        role_id,
+        roles!inner(name)
+      `)
       .eq("user_id", user.id);
 
-    const isAdmin = roles?.some(r => r.role_id === "super_admin");
+    const isAdmin = userRoles?.some((ur: any) => ur.roles?.name === "super_admin");
     if (!isAdmin) {
       return { success: false, error: "Unauthorized" };
     }
@@ -214,12 +217,15 @@ export async function getAuditUsers() {
     }
 
     // Check if user is admin
-    const { data: roles } = await supabase
+    const { data: userRoles } = await supabase
       .from("user_roles")
-      .select("role_id")
+      .select(`
+        role_id,
+        roles!inner(name)
+      `)
       .eq("user_id", user.id);
 
-    const isAdmin = roles?.some(r => r.role_id === "super_admin");
+    const isAdmin = userRoles?.some((ur: any) => ur.roles?.name === "super_admin");
     if (!isAdmin) {
       return { success: false, error: "Unauthorized" };
     }
@@ -277,12 +283,15 @@ export async function exportAuditLogs(filters?: AuditLogFilters) {
     }
 
     // Check if user is admin
-    const { data: roles } = await supabase
+    const { data: userRoles } = await supabase
       .from("user_roles")
-      .select("role_id")
+      .select(`
+        role_id,
+        roles!inner(name)
+      `)
       .eq("user_id", user.id);
 
-    const isAdmin = roles?.some(r => r.role_id === "super_admin");
+    const isAdmin = userRoles?.some((ur: any) => ur.roles?.name === "super_admin");
     if (!isAdmin) {
       return { success: false, error: "Unauthorized" };
     }
