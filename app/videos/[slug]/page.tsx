@@ -147,6 +147,10 @@ export default async function VideoPage({ params }: VideoPageProps) {
       <video
         src={videoUrl}
         controls
+        autoPlay
+        loop
+        muted
+        playsInline
         className="h-full w-full"
         poster={
           video.thumbnail

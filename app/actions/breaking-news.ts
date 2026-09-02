@@ -118,6 +118,7 @@ export async function getBreakingNewsById(id: string) {
  */
 export async function createBreakingNews(newsData: {
   headline_override: string;
+  type?: 'breaking' | 'announcement';
   article_id?: string | null;
   link_url?: string | null;
   priority?: number;
@@ -138,6 +139,7 @@ export async function createBreakingNews(newsData: {
       .from("breaking_news")
       .insert({
         headline_override: newsData.headline_override,
+        type: newsData.type || 'breaking',
         article_id: newsData.article_id || null,
         link_url: newsData.link_url || null,
         priority: newsData.priority ?? 0,
@@ -171,6 +173,7 @@ export async function updateBreakingNews(
   id: string,
   newsData: {
     headline_override?: string;
+    type?: 'breaking' | 'announcement';
     article_id?: string | null;
     link_url?: string | null;
     priority?: number;

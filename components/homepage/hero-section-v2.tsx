@@ -316,10 +316,10 @@ export function HeroSection({ content }: HeroSectionProps) {
                 <Link
                   key={item.id}
                   href={itemIsVideo ? `/videos/${item.slug}` : `/news/${item.slug}`}
-                  className="group bg-[--panel] border border-[--border] rounded-lg overflow-hidden flex-1 flex flex-col hover:border-[--red] transition-colors"
+                  className="group bg-[--panel] border border-[--border] rounded-lg overflow-hidden flex-1 relative hover:border-[--red] transition-colors"
                 >
-                  {/* Thumbnail - Fixed height */}
-                  <div className="relative h-20 bg-black flex-shrink-0">
+                  {/* Full-size Thumbnail */}
+                  <div className="relative h-full min-h-[140px] bg-black">
                     {itemImageUrl ? (
                       <img
                         src={itemImageUrl}
@@ -330,39 +330,39 @@ export function HeroSection({ content }: HeroSectionProps) {
                       <div className="w-full h-full bg-gradient-to-br from-[--panel] to-[--panel-2]" />
                     )}
                     
+                    {/* Dark gradient overlay for text readability */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+                    
                     {/* Video Play Icon */}
                     {itemIsVideo && (
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-12 h-12 rounded-full bg-black/60 border-2 border-white/80 flex items-center justify-center">
+                        <div className="w-12 h-12 rounded-full bg-black/60 border-2 border-white/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                           <Play className="w-5 h-5 text-white ml-0.5" fill="white" />
                         </div>
                       </div>
                     )}
 
                     {/* Video Indicator Badge */}
-                    {itemIsVideo && (
-                      <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm px-2 py-1 rounded flex items-center gap-1">
-                        <Video className="w-3 h-3 text-white" />
-                        {item.duration_seconds && (
-                          <span className="text-xs text-white font-bold">
-                            {formatDuration(item.duration_seconds)}
-                          </span>
-                        )}
+                    {itemIsVideo && item.duration_seconds && (
+                      <div className="absolute top-2 right-2 bg-black/80 backdrop-blur-sm px-2 py-1 rounded">
+                        <span className="text-xs text-white font-bold">
+                          {formatDuration(item.duration_seconds)}
+                        </span>
                       </div>
                     )}
-                  </div>
 
-                  {/* Content */}
-                  <div className="p-3 flex flex-col gap-2 flex-1">
-                    {/* Title */}
-                    <h3 className="text-sm font-bold leading-tight line-clamp-2 group-hover:text-[--red] transition-colors text-[--text]">
-                      {item.title}
-                    </h3>
+                    {/* Content Overlay - at bottom */}
+                    <div className="absolute bottom-0 left-0 right-0 p-3">
+                      {/* Title */}
+                      <h3 className="text-sm font-bold leading-tight line-clamp-2 mb-2 text-white drop-shadow-lg group-hover:text-[--red] transition-colors">
+                        {item.title}
+                      </h3>
 
-                    {/* Time */}
-                    <p className="text-xs text-[--muted-2]" suppressHydrationWarning>
-                      {mounted ? getTimeAgo(item.published_at || '') : '...'}
-                    </p>
+                      {/* Time */}
+                      <p className="text-xs text-white/80 font-medium" suppressHydrationWarning>
+                        {mounted ? getTimeAgo(item.published_at || '') : '...'}
+                      </p>
+                    </div>
                   </div>
                 </Link>
               );

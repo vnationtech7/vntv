@@ -84,9 +84,9 @@ export function VideoCard({
 
   return (
     <Link href={`/video/${slug}`} className="group block">
-      <article className="overflow-hidden rounded-lg border border-border bg-background-panel transition-all hover:border-vntv-red hover:shadow-lg">
-        {/* Thumbnail with Play Overlay */}
-        <div className="relative aspect-video overflow-hidden bg-background-secondary">
+      <article className="relative overflow-hidden rounded-lg border border-border bg-background-panel transition-all hover:border-vntv-red hover:shadow-lg h-full">
+        {/* Full-size Thumbnail - fills entire card */}
+        <div className="relative h-full min-h-[280px] overflow-hidden bg-background-secondary">
           {thumbnailUrl ? (
             <img
               src={thumbnailUrl}
@@ -110,6 +110,9 @@ export function VideoCard({
             </div>
           )}
 
+          {/* Dark gradient overlay for text readability */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
           {/* Play Button Overlay */}
           <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 transition-opacity group-hover:opacity-100">
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-vntv-red text-white shadow-lg">
@@ -120,7 +123,7 @@ export function VideoCard({
           {/* Category Badge */}
           {categoryName && (
             <div className="absolute left-3 top-3">
-              <span className="inline-block rounded bg-vntv-red px-2 py-1 text-xs font-bold uppercase text-white">
+              <span className="inline-block rounded bg-vntv-red px-2 py-1 text-xs font-bold uppercase text-white shadow-lg">
                 {categoryName}
               </span>
             </div>
@@ -128,33 +131,27 @@ export function VideoCard({
 
           {/* Duration Badge */}
           {durationSeconds && (
-            <div className="absolute bottom-3 right-3">
-              <span className="inline-block rounded bg-black/80 px-2 py-1 text-xs font-bold text-white">
+            <div className="absolute top-3 right-3">
+              <span className="inline-block rounded bg-black/80 px-2 py-1 text-xs font-bold text-white shadow-lg">
                 {formatDuration(durationSeconds)}
               </span>
             </div>
           )}
-        </div>
 
-        {/* Content */}
-        <div className="p-4">
-          <h3 className="mb-2 line-clamp-2 text-base font-bold text-text-primary group-hover:text-vntv-red transition-colors">
-            {title}
-          </h3>
+          {/* Title and metadata overlay - at bottom */}
+          <div className="absolute bottom-0 left-0 right-0 p-4">
+            <h3 className="mb-2 line-clamp-2 text-base font-bold leading-tight text-white drop-shadow-lg group-hover:text-vntv-red transition-colors">
+              {title}
+            </h3>
 
-          {description && (
-            <p className="mb-3 line-clamp-2 text-sm text-text-secondary">
-              {description}
-            </p>
-          )}
-
-          {/* Meta */}
-          {viewCount !== undefined && (
-            <div className="flex items-center gap-2 text-xs text-text-tertiary">
-              <Play className="h-3 w-3" />
-              <span>{formatViewCount(viewCount)} views</span>
-            </div>
-          )}
+            {/* Views count */}
+            {viewCount !== undefined && (
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-white/90">
+                <Play className="h-3 w-3" />
+                <span>{formatViewCount(viewCount)} views</span>
+              </div>
+            )}
+          </div>
         </div>
       </article>
     </Link>

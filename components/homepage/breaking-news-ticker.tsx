@@ -87,12 +87,12 @@ export function BreakingNewsTicker() {
         }
 
         .animate-scroll {
-          animation: scroll 60s linear infinite;
+          animation: scroll linear infinite;
         }
 
-        /* Adjust speed based on number of items */
+        /* Adjust speed based on number of items - faster speed */
         .animate-scroll {
-          animation-duration: ${Math.max(30, breakingNews.length * 10)}s;
+          animation-duration: ${Math.max(20, breakingNews.length * 5)}s;
         }
       `}</style>
     </div>
@@ -101,7 +101,8 @@ export function BreakingNewsTicker() {
 
 // Separate NewsItem component for rendering individual news/announcement
 function NewsItem({ news }: { news: BreakingNews }) {
-  const isBreaking = news.type === 'breaking';
+  // Default to 'breaking' if type is undefined (for backwards compatibility)
+  const isBreaking = !news.type || news.type === 'breaking';
   
   // Determine link
   const getLink = () => {
