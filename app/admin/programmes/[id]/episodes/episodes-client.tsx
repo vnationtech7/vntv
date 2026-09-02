@@ -3,11 +3,12 @@
 import { useState } from "react";
 import { PageHeader } from "@/components/cms/page-header";
 import { Button } from "@/components/ui";
-import { Plus, Edit, Eye, EyeOff, Play, X } from "lucide-react";
+import { Plus, Edit, Eye, EyeOff, Play, X, Trash2, CheckCircle, XCircle } from "lucide-react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { VideoPlayer } from "@/components/video/video-player";
-
+import { deleteEpisode, toggleEpisodeStatus } from "@/app/actions/episode";
+import { useRouter } from "next/navigation";
 // Helper function to extract YouTube thumbnail
 function getYouTubeThumbnail(url: string): string | null {
   try {
@@ -45,6 +46,7 @@ interface EpisodeWithVideo {
   episode_number: number;
   description: string | null;
   published_at: string | null;
+  status: string;
   created_at: string;
   url?: string | null;
   video?: {
@@ -72,7 +74,45 @@ export default function EpisodesPageClient({
   episodes: EpisodeWithVideo[];
   error: string | null;
 }) {
+  const router = useRouter();
   const [previewEpisode, setPreviewEpisode] = useState<EpisodeWithVideo | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+
+  const handleDelete = async (id: string, title: string) => {
+    if (!confirm(`Delete episode "${title}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    setDeletingId(id);
+    const { success, error } = await deleteEpisode(id, programmeId);
+
+    if (error) {
+      alert(`Failed to delete: ${error}`);
+    } else {
+      router.refresh();
+    }
+
+    setDeletingId(null);
+  };
+
+  const handleToggleStatus = async (id: string, currentStatus: string, title: string) => {
+    const action = currentStatus === "published" ? "unpublish" : "publish";
+    if (!confirm(`${action === "publish" ? "Publish" : "Unpublish"} episode "${title}"?`)) {
+      return;
+    }
+
+    setTogglingId(id);
+    const { success, error } = await toggleEpisodeStatus(id, programmeId, currentStatus);
+
+    if (error) {
+      alert(`Failed to ${action}: ${error}`);
+    } else {
+      router.refresh();
+    }
+
+    setTogglingId(null);
+  };
 
   return (
     <>
@@ -157,7 +197,7 @@ export default function EpisodesPageClient({
                             <span className="text-xs font-bold text-text-tertiary">
                               Episode {episode.episode_number}
                             </span>
-                            {episode.published_at ? (
+                            {episode.status === "published" ? (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-green-500/10 text-green-500 text-xs font-medium">
                                 <Eye className="w-3 h-3" />
                                 Published
@@ -206,13 +246,37 @@ export default function EpisodesPageClient({
                         </div>
 
                         {/* Actions */}
-                        <div className="flex-shrink-0">
+                        <div className="flex-shrink-0 flex gap-2">
+                          <button
+                            onClick={() => handleToggleStatus(episode.id, episode.status, episode.title)}
+                            disabled={togglingId === episode.id}
+                            className={`p-2 rounded transition-colors disabled:opacity-50 ${
+                              episode.status === "published"
+                                ? "text-green-500 hover:bg-green-500/10"
+                                : "text-gray-500 hover:bg-gray-500/10"
+                            }`}
+                            title={episode.status === "published" ? "Unpublish" : "Publish"}
+                          >
+                            {episode.status === "published" ? (
+                              <CheckCircle className="w-4 h-4" />
+                            ) : (
+                              <XCircle className="w-4 h-4" />
+                            )}
+                          </button>
                           <Link href={`/admin/programmes/${programmeId}/episodes/${episode.id}`}>
                             <Button variant="outline" size="sm">
                               <Edit className="w-4 h-4 mr-2" />
                               Edit
                             </Button>
                           </Link>
+                          <button
+                            onClick={() => handleDelete(episode.id, episode.title)}
+                            disabled={deletingId === episode.id}
+                            className="p-2 text-red-500 hover:bg-red-500/10 rounded transition-colors disabled:opacity-50"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
                       </div>
                     </div>

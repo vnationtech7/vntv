@@ -18,9 +18,10 @@ export const metadata = {
 export default async function AuditLogsPage({
   searchParams,
 }: {
-  searchParams: { page?: string };
+  searchParams: Promise<{ page?: string }>;
 }) {
-  const page = parseInt(searchParams.page || "1", 10);
+  const params = await searchParams;
+  const page = parseInt(params.page || "1", 10);
 
   // Fetch initial data
   const [logsResult, usersResult] = await Promise.all([

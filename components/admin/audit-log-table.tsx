@@ -5,7 +5,7 @@
  * Milestone 17: Display audit logs with expandable details
  */
 
-import { useState } from "react";
+import React, { useState } from "react";
 import type { AuditLogWithUser } from "@/types/audit";
 import { ChevronDown, ChevronRight, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -110,9 +110,8 @@ export function AuditLogTable({ logs, onExport }: AuditLogTableProps) {
                 const hasChanges = log.changes && Object.keys(log.changes).length > 0;
 
                 return (
-                  <>
+                  <React.Fragment key={log.id}>
                     <tr
-                      key={log.id}
                       className="transition-colors hover:bg-background-panel"
                     >
                       <td className="px-4 py-3">
@@ -134,7 +133,7 @@ export function AuditLogTable({ logs, onExport }: AuditLogTableProps) {
                       </td>
                       <td className="px-4 py-3">
                         <div className="text-sm text-text-primary">
-                          {log.user?.full_name || "Unknown"}
+                          {log.user?.full_name || log.user?.email?.split('@')[0] || "Unknown"}
                         </div>
                         <div className="text-xs text-text-tertiary">
                           {log.user?.email || "N/A"}
@@ -219,7 +218,7 @@ export function AuditLogTable({ logs, onExport }: AuditLogTableProps) {
                         </td>
                       </tr>
                     )}
-                  </>
+                  </React.Fragment>
                 );
               })}
             </tbody>

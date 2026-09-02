@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { getVideos, getVideoStats, deleteVideo, type Video } from "./actions";
+import { getVideos, getVideoStats, deleteVideo, toggleVideoStatus, type Video } from "./actions";
 import { extractYouTubeId, getYouTubeThumbnail, getYouTubeEmbedUrl } from "@/lib/utils/youtube";
 import {
   Plus,
@@ -19,6 +19,8 @@ import {
   Play,
   Eye,
   X,
+  CheckCircle,
+  XCircle,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -49,6 +51,7 @@ function VideosPageContent() {
   const [sourceTypeFilter, setSourceTypeFilter] = useState<FilterSourceType>("all");
   const [search, setSearch] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
   const [playingVideo, setPlayingVideo] = useState<Video | null>(null);
 
   const loadVideos = async () => {
@@ -113,6 +116,25 @@ function VideosPageContent() {
     }
 
     setDeletingId(null);
+  };
+
+  const handleToggleStatus = async (id: string, currentStatus: string, title: string) => {
+    const action = currentStatus === "published" ? "unpublish" : "publish";
+    if (!confirm(`${action === "publish" ? "Publish" : "Unpublish"} "${title}"?`)) {
+      return;
+    }
+
+    setTogglingId(id);
+    const { error } = await toggleVideoStatus(id, currentStatus);
+
+    if (error) {
+      alert(`Failed to ${action}: ${error}`);
+    } else {
+      await loadVideos();
+      await loadStats();
+    }
+
+    setTogglingId(null);
   };
 
   const getThumbnail = (video: Video): string | null => {
@@ -455,6 +477,23 @@ function VideosPageContent() {
                         {video.view_count || 0} views
                       </div>
                       <div className="flex gap-2">
+                        <button
+                          onClick={() => handleToggleStatus(video.id, video.status, video.title)}
+                          disabled={togglingId === video.id}
+                          className={`${
+                            video.status === "published"
+                              ? "text-green-500 hover:text-green-600"
+                              : "text-text-secondary hover:text-green-500"
+                          } disabled:opacity-50 transition-colors`}
+                          aria-label={video.status === "published" ? "Unpublish" : "Publish"}
+                          title={video.status === "published" ? "Unpublish" : "Publish"}
+                        >
+                          {video.status === "published" ? (
+                            <CheckCircle className="h-4 w-4" />
+                          ) : (
+                            <XCircle className="h-4 w-4" />
+                          )}
+                        </button>
                         <Link
                           href={`/admin/videos/${video.id}`}
                           className="text-text-secondary hover:text-vntv-red"

@@ -3,6 +3,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { logAuditEvent } from "@/app/actions/audit";
 
 /**
  * Get featured articles for admin management
@@ -107,6 +108,13 @@ export async function toggleBreakingNewsActive(breakingId: string, isActive: boo
   const supabase = await createClient();
 
   try {
+    // Get old status for audit log
+    const { data: oldNews } = await supabase
+      .from("breaking_news")
+      .select("title, is_active")
+      .eq("id", breakingId)
+      .single();
+
     const { error } = await supabase
       .from("breaking_news")
       .update({ is_active: isActive } as any)
@@ -116,6 +124,21 @@ export async function toggleBreakingNewsActive(breakingId: string, isActive: boo
       console.error("Error updating breaking news status:", error);
       return { success: false, error: error.message };
     }
+
+    // Log audit event
+    await logAuditEvent({
+      action: isActive ? "activate" : "deactivate",
+      entityType: "breaking_news",
+      entityId: breakingId,
+      oldValues: oldNews ? {
+        title: oldNews.title,
+        is_active: oldNews.is_active,
+      } : undefined,
+      newValues: {
+        title: oldNews?.title,
+        is_active: isActive,
+      },
+    });
 
     // Revalidate homepage
     revalidatePath("/");
@@ -140,19 +163,36 @@ export async function createBreakingNews(data: {
   const supabase = await createClient();
 
   try {
-    const { error } = await supabase.from("breaking_news").insert({
-      article_id: data.articleId,
-      title: data.title,
-      is_active: true,
-      priority: data.priority,
-      starts_at: data.startsAt,
-      expires_at: data.expiresAt,
-    });
+    const { data: newBreakingNews, error } = await supabase
+      .from("breaking_news")
+      .insert({
+        article_id: data.articleId,
+        title: data.title,
+        is_active: true,
+        priority: data.priority,
+        starts_at: data.startsAt,
+        expires_at: data.expiresAt,
+      })
+      .select()
+      .single();
 
     if (error) {
       console.error("Error creating breaking news:", error);
       return { success: false, error: error.message };
     }
+
+    // Log audit event
+    await logAuditEvent({
+      action: "create",
+      entityType: "breaking_news",
+      entityId: newBreakingNews.id,
+      newValues: {
+        title: data.title,
+        article_id: data.articleId,
+        priority: data.priority,
+        is_active: true,
+      },
+    });
 
     // Revalidate homepage
     revalidatePath("/");
@@ -171,6 +211,13 @@ export async function deleteBreakingNews(breakingId: string) {
   const supabase = await createClient();
 
   try {
+    // Get breaking news data before deletion for audit log
+    const { data: breakingNews } = await supabase
+      .from("breaking_news")
+      .select("title, article_id, priority, is_active")
+      .eq("id", breakingId)
+      .single();
+
     const { error } = await supabase
       .from("breaking_news")
       .delete()
@@ -180,6 +227,19 @@ export async function deleteBreakingNews(breakingId: string) {
       console.error("Error deleting breaking news:", error);
       return { success: false, error: error.message };
     }
+
+    // Log audit event
+    await logAuditEvent({
+      action: "delete",
+      entityType: "breaking_news",
+      entityId: breakingId,
+      oldValues: breakingNews ? {
+        title: breakingNews.title,
+        article_id: breakingNews.article_id,
+        priority: breakingNews.priority,
+        is_active: breakingNews.is_active,
+      } : undefined,
+    });
 
     // Revalidate homepage
     revalidatePath("/");

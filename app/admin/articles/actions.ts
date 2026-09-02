@@ -4,6 +4,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { generateSlug } from "@/lib/utils/slug";
+import { logAuditEvent } from "@/app/actions/audit";
 
 export type ArticleStatus =
   | "draft"
@@ -232,6 +233,22 @@ export async function createArticle(
     }
   }
 
+  // Log audit event
+  await logAuditEvent({
+    action: "create",
+    entityType: "article",
+    entityId: data.id,
+    newValues: {
+      title: data.title,
+      slug: data.slug,
+      status: data.status,
+      is_breaking: data.is_breaking,
+      is_featured: data.is_featured,
+      is_exclusive: data.is_exclusive,
+      category_id: data.category_id,
+    },
+  });
+
   revalidatePath("/admin/articles");
   return { data, error: null };
 }
@@ -269,7 +286,7 @@ export async function updateArticle(
   // Get current article to check status change
   const { data: currentArticle } = await supabase
     .from("articles")
-    .select("status, published_at")
+    .select("title, slug, status, published_at, is_breaking, is_featured, is_exclusive, category_id")
     .eq("id", id)
     .single();
 
@@ -336,6 +353,31 @@ export async function updateArticle(
     }
   }
 
+  // Log audit event with old and new values
+  await logAuditEvent({
+    action: "update",
+    entityType: "article",
+    entityId: id,
+    oldValues: currentArticle ? {
+      title: currentArticle.title,
+      slug: currentArticle.slug,
+      status: currentArticle.status,
+      is_breaking: currentArticle.is_breaking,
+      is_featured: currentArticle.is_featured,
+      is_exclusive: currentArticle.is_exclusive,
+      category_id: currentArticle.category_id,
+    } : undefined,
+    newValues: {
+      title: data.title,
+      slug: data.slug,
+      status: data.status,
+      is_breaking: data.is_breaking,
+      is_featured: data.is_featured,
+      is_exclusive: data.is_exclusive,
+      category_id: data.category_id,
+    },
+  });
+
   revalidatePath("/admin/articles");
   return { data, error: null };
 }
@@ -357,6 +399,13 @@ export async function deleteArticle(
     return { error: "Unauthorized" };
   }
 
+  // Get article data before deletion for audit log
+  const { data: article } = await supabase
+    .from("articles")
+    .select("title, slug, status, is_breaking, is_featured")
+    .eq("id", id)
+    .single();
+
   // Delete article (tags will cascade delete)
   const { error } = await supabase.from("articles").delete().eq("id", id);
 
@@ -364,6 +413,20 @@ export async function deleteArticle(
     console.error("Error deleting article:", error);
     return { error: error.message };
   }
+
+  // Log audit event
+  await logAuditEvent({
+    action: "delete",
+    entityType: "article",
+    entityId: id,
+    oldValues: article ? {
+      title: article.title,
+      slug: article.slug,
+      status: article.status,
+      is_breaking: article.is_breaking,
+      is_featured: article.is_featured,
+    } : undefined,
+  });
 
   revalidatePath("/admin/articles");
   return { error: null };
@@ -387,17 +450,18 @@ export async function updateArticleStatus(
     return { error: "Unauthorized" };
   }
 
+  // Get old status for audit log
+  const { data: oldArticle } = await supabase
+    .from("articles")
+    .select("status, published_at, title")
+    .eq("id", id)
+    .single();
+
   const updateData: any = { status };
 
   // Set published_at if status is published
   if (status === "published") {
-    const { data: article } = await supabase
-      .from("articles")
-      .select("published_at")
-      .eq("id", id)
-      .single();
-
-    if (!article?.published_at) {
+    if (!oldArticle?.published_at) {
       updateData.published_at = new Date().toISOString();
     }
   }
@@ -411,6 +475,25 @@ export async function updateArticleStatus(
     console.error("Error updating article status:", error);
     return { error: error.message };
   }
+
+  // Log audit event with appropriate action
+  const action = status === "published" ? "publish" : 
+                 status === "archived" ? "archive" : 
+                 "update";
+  
+  await logAuditEvent({
+    action,
+    entityType: "article",
+    entityId: id,
+    oldValues: oldArticle ? {
+      status: oldArticle.status,
+      title: oldArticle.title,
+    } : undefined,
+    newValues: {
+      status: status,
+      title: oldArticle?.title,
+    },
+  });
 
   revalidatePath("/admin/articles");
   return { error: null };

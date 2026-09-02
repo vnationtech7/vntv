@@ -19,35 +19,45 @@ interface YouTubePlayerProps {
 
 /**
  * Extract YouTube video ID from URL
+ * Supports all YouTube URL formats including Shorts
  */
 function extractYouTubeId(url: string): string | null {
-  // Handle various YouTube URL formats:
-  // - https://www.youtube.com/watch?v=VIDEO_ID
-  // - https://youtu.be/VIDEO_ID
-  // - https://www.youtube.com/embed/VIDEO_ID
-  // - Just VIDEO_ID
-  
   if (!url) return null;
 
-  // If it's already just an ID (11 characters, alphanumeric and dashes/underscores)
+  // If it's already just an ID (11 characters)
   if (/^[a-zA-Z0-9_-]{11}$/.test(url)) {
     return url;
   }
 
-  // Try to extract from various URL patterns
-  const patterns = [
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
-    /^([a-zA-Z0-9_-]{11})$/,
-  ];
+  // Remove protocol and www if present
+  let cleanUrl = url.replace(/^(https?:\/\/)?(www\.)?/, '');
+  
+  // Try multiple extraction methods
+  let videoId: string | null = null;
 
-  for (const pattern of patterns) {
-    const match = url.match(pattern);
-    if (match && match[1]) {
-      return match[1];
+  // Method 1: Extract from query parameter (watch?v=)
+  const vParam = cleanUrl.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
+  if (vParam && vParam[1]) {
+    videoId = vParam[1];
+  }
+
+  // Method 2: Extract from path (youtu.be/, shorts/, embed/, v/)
+  if (!videoId) {
+    const pathMatch = cleanUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:shorts\/|embed\/|v\/))([a-zA-Z0-9_-]{11})/);
+    if (pathMatch && pathMatch[1]) {
+      videoId = pathMatch[1];
     }
   }
 
-  return null;
+  // Method 3: Find any 11-character alphanumeric string (last resort)
+  if (!videoId) {
+    const anyMatch = cleanUrl.match(/([a-zA-Z0-9_-]{11})/);
+    if (anyMatch && anyMatch[1]) {
+      videoId = anyMatch[1];
+    }
+  }
+
+  return videoId;
 }
 
 export function YouTubePlayer({
@@ -63,13 +73,18 @@ export function YouTubePlayer({
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
+    console.log('[YouTube Player] Processing URL:', videoUrl);
     const id = extractYouTubeId(videoUrl);
+    console.log('[YouTube Player] Extracted ID:', id);
+    
     if (id) {
       setVideoId(id);
       setError(null);
+      console.log('[YouTube Player] Success - Video ID set:', id);
     } else {
       setError("Invalid YouTube URL");
       setVideoId(null);
+      console.error('[YouTube Player] Failed to extract ID from:', videoUrl);
     }
   }, [videoUrl]);
 

@@ -1,10 +1,11 @@
 import { notFound } from "next/navigation";
 import { PublicLayout } from "@/components/layout/public-layout";
-import { getCategory, getCategoryArticles } from "@/app/actions/category";
-import { ArticleCard } from "@/components/content";
+import { getCategory, getCategoryContent } from "@/app/actions/category";
+import { ArticleCard, ContentCard } from "@/components/content";
 import { Button } from "@/components/ui";
 import Link from "next/link";
 import type { Metadata } from "next";
+import { Badge } from "@/components/ui/badge";
 
 interface CategoryPageProps {
   params: Promise<{
@@ -61,12 +62,12 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
   const { subcategory, sort = "latest", page = "1" } = await searchParams;
 
   const currentPage = parseInt(page, 10) || 1;
-  const limit = 12;
+  const limit = 24;
 
-  // Fetch category and articles
-  const [categoryResult, articlesResult] = await Promise.all([
+  // Fetch category and unified content (articles + RSS)
+  const [categoryResult, contentResult] = await Promise.all([
     getCategory(slug),
-    getCategoryArticles(slug, {
+    getCategoryContent(slug, {
       subcategorySlug: subcategory,
       sortBy: sort,
       page: currentPage,
@@ -79,8 +80,8 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
   }
 
   const category = categoryResult.data;
-  const articles = articlesResult.data || [];
-  const total = articlesResult.total || 0;
+  const content = contentResult.data || [];
+  const total = contentResult.total || 0;
   const totalPages = Math.ceil(total / limit);
 
   return (
@@ -163,23 +164,26 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
         </div>
 
         {/* Articles Grid */}
-        {articles.length > 0 ? (
+        {content.length > 0 ? (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 mb-12">
-              {articles.map((article) => (
-                <ArticleCard
-                  key={article.id}
-                  id={article.id}
-                  title={article.title}
-                  slug={article.slug}
-                  excerpt={article.excerpt}
-                  publishedAt={article.published_at}
-                  categoryName={article.category?.name}
-                  categorySlug={article.category?.slug}
-                  authorName={article.author?.name}
-                  imagePath={article.featured_image?.storage_path}
-                  imageAlt={article.featured_image?.alt_text}
+              {content.map((item) => (
+                <ContentCard
+                  key={`${item.type}-${item.id}`}
+                  id={item.id}
+                  title={item.title}
+                  slug={item.slug || ""}
+                  excerpt={item.description}
+                  publishedAt={item.published_at}
+                  categoryName={category.name}
+                  categorySlug={category.slug}
+                  authorName={item.author?.name}
+                  imagePath={item.type === "article" && item.image?.storage_path ? item.image.storage_path : undefined}
+                  imageUrl={item.type === "rss" && item.image?.url ? item.image.url : undefined}
+                  imageAlt={item.image?.alt_text}
                   variant="default"
+                  contentType={item.type}
+                  sourceName={item.type === "rss" && item.feed ? (item.feed.source_name || item.feed.name) : undefined}
                 />
               ))}
             </div>
@@ -214,7 +218,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
         ) : (
           <div className="text-center py-20">
             <p className="text-xl text-text-secondary">
-              No articles found in this category yet.
+              No content found in this category yet.
             </p>
           </div>
         )}

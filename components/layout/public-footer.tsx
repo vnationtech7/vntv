@@ -22,8 +22,8 @@ const exploreLinks = [
 const aboutLinks = [
   { name: "About Us", href: "/about" },
   { name: "Contact", href: "/contact" },
-  { name: "Advertise", href: "/advertise" },
-  { name: "Careers", href: "/careers" },
+  { name: "Advertise", href: "/coming-soon" },
+  { name: "Careers", href: "/coming-soon" },
 ];
 
 const supportLinks = [
@@ -38,16 +38,16 @@ const moreLinks = [
   { name: "Sports", href: "/category/sports" },
   { name: "Viral", href: "/category/viral" },
   { name: "Opinion", href: "/category/opinion" },
-  { name: "Video", href: "/video" },
-  { name: "Originals", href: "/originals" },
+  { name: "Video", href: "/videos" },
+  { name: "Originals", href: "/programmes" },
 ];
 
 const socialLinks = [
-  { name: "Facebook", href: "#", icon: FaFacebook },
-  { name: "X (Twitter)", href: "#", icon: FaXTwitter },
-  { name: "YouTube", href: "#", icon: FaYoutube },
-  { name: "Instagram", href: "#", icon: FaInstagram },
-  { name: "TikTok", href: "#", icon: FaTiktok },
+  { name: "Facebook", href: "https://facebook.com/vntv1", icon: FaFacebook },
+  { name: "X (Twitter)", href: "https://twitter.com/vntv", icon: FaXTwitter },
+  { name: "YouTube", href: "https://www.youtube.com/@vnationtv4625", icon: FaYoutube },
+  { name: "Instagram", href: "https://instagram.com/officialvntv", icon: FaInstagram },
+  { name: "TikTok", href: "https://www.tiktok.com/@officialvntv", icon: FaTiktok },
 ];
 
 export function PublicFooter() {

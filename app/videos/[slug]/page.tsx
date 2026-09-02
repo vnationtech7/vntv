@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PublicLayout } from "@/components/layout/public-layout";
+import { SuggestedVideos } from "@/components/content";
 
 interface VideoPageProps {
   params: {
@@ -40,12 +41,74 @@ async function getVideo(slug: string) {
   };
 }
 
-function getYouTubeEmbedUrl(url: string) {
-  const videoIdMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/);
-  if (videoIdMatch) {
-    return `https://www.youtube.com/embed/${videoIdMatch[1]}`;
+async function getSuggestedVideos(currentVideoId: string, videoType: string | null, limit: number = 6) {
+  const supabase = await createClient();
+
+  try {
+    let query = supabase
+      .from("videos")
+      .select(`
+        id, title, slug, source_type, source_url, duration_seconds, view_count, 
+        published_at, video_type,
+        thumbnail:media_assets(storage_path, alt_text),
+        category:categories(name, slug)
+      `)
+      .eq("status", "published")
+      .not("published_at", "is", null)
+      .neq("id", currentVideoId)
+      .order("published_at", { ascending: false })
+      .limit(limit);
+
+    // Prioritize same video type
+    if (videoType) {
+      query = query.eq("video_type", videoType);
+    }
+
+    const { data } = await query;
+    return data || [];
+  } catch (err) {
+    console.error("Error fetching suggested videos:", err);
+    return [];
   }
-  return null;
+}
+
+function getYouTubeEmbedUrl(url: string) {
+  if (!url) return null;
+
+  // If it's already just an ID (11 characters)
+  if (/^[a-zA-Z0-9_-]{11}$/.test(url)) {
+    return `https://www.youtube.com/embed/${url}`;
+  }
+
+  // Remove protocol and www if present
+  let cleanUrl = url.replace(/^(https?:\/\/)?(www\.)?/, '');
+  
+  // Try multiple extraction methods
+  let videoId: string | null = null;
+
+  // Method 1: Extract from query parameter (watch?v=)
+  const vParam = cleanUrl.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
+  if (vParam && vParam[1]) {
+    videoId = vParam[1];
+  }
+
+  // Method 2: Extract from path (youtu.be/, shorts/, embed/, v/)
+  if (!videoId) {
+    const pathMatch = cleanUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:shorts\/|embed\/|v\/))([a-zA-Z0-9_-]{11})/);
+    if (pathMatch && pathMatch[1]) {
+      videoId = pathMatch[1];
+    }
+  }
+
+  // Method 3: Find any 11-character string (fallback)
+  if (!videoId) {
+    const anyMatch = cleanUrl.match(/([a-zA-Z0-9_-]{11})/);
+    if (anyMatch && anyMatch[1]) {
+      videoId = anyMatch[1];
+    }
+  }
+
+  return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
 }
 
 export default async function VideoPage({ params }: VideoPageProps) {
@@ -55,6 +118,9 @@ export default async function VideoPage({ params }: VideoPageProps) {
   if (!video) {
     notFound();
   }
+
+  // Get suggested videos
+  const suggestedVideos = await getSuggestedVideos(video.id, video.video_type, 6);
 
   const publishedDate = video.published_at
     ? new Date(video.published_at)
@@ -198,6 +264,16 @@ export default async function VideoPage({ params }: VideoPageProps) {
             </dd>
           </dl>
         </div>
+
+        {/* Suggested Videos */}
+        {suggestedVideos.length > 0 && (
+          <div className="mt-12">
+            <SuggestedVideos 
+              videos={suggestedVideos} 
+              title="Related Videos"
+            />
+          </div>
+        )}
       </article>
     </PublicLayout>
   );

@@ -97,7 +97,7 @@ export function VideoCard({
           ) : sourceType === "upload" && sourceUrl ? (
             // For uploaded videos without thumbnail, show video frame
             <video
-              src={sourceUrl}
+              src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${sourceUrl}`}
               className="h-full w-full object-cover pointer-events-none"
               preload="metadata"
               muted

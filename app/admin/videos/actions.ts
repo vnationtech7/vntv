@@ -3,6 +3,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { logAuditEvent } from "@/app/actions/audit";
 
 export type Video = {
   id: string;
@@ -179,6 +180,22 @@ export async function createVideo(formData: VideoFormData) {
       return { data: null, error: error.message };
     }
 
+    // Log audit event
+    await logAuditEvent({
+      action: "create",
+      entityType: "video",
+      entityId: data.id,
+      newValues: {
+        title: data.title,
+        slug: data.slug,
+        status: data.status,
+        video_type: data.video_type,
+        source_type: data.source_type,
+        is_featured: data.is_featured,
+        is_exclusive: data.is_exclusive,
+      },
+    });
+
     revalidatePath("/admin/videos");
     return { data: data as Video, error: null };
   } catch (err) {
@@ -194,6 +211,13 @@ export async function updateVideo(id: string, formData: VideoFormData) {
   const supabase = await createClient();
 
   try {
+    // Get old values first for audit log
+    const { data: oldVideo } = await supabase
+      .from("videos")
+      .select("title, slug, status, video_type, source_type, is_featured, is_exclusive")
+      .eq("id", id)
+      .single();
+
     const { data, error } = await supabase
       .from("videos")
       .update({
@@ -222,6 +246,31 @@ export async function updateVideo(id: string, formData: VideoFormData) {
       return { data: null, error: error.message };
     }
 
+    // Log audit event with old and new values
+    await logAuditEvent({
+      action: "update",
+      entityType: "video",
+      entityId: id,
+      oldValues: oldVideo ? {
+        title: oldVideo.title,
+        slug: oldVideo.slug,
+        status: oldVideo.status,
+        video_type: oldVideo.video_type,
+        source_type: oldVideo.source_type,
+        is_featured: oldVideo.is_featured,
+        is_exclusive: oldVideo.is_exclusive,
+      } : undefined,
+      newValues: {
+        title: data.title,
+        slug: data.slug,
+        status: data.status,
+        video_type: data.video_type,
+        source_type: data.source_type,
+        is_featured: data.is_featured,
+        is_exclusive: data.is_exclusive,
+      },
+    });
+
     revalidatePath("/admin/videos");
     return { data: data as Video, error: null };
   } catch (err) {
@@ -237,6 +286,13 @@ export async function deleteVideo(id: string) {
   const supabase = await createClient();
 
   try {
+    // Get video data before deletion for audit log
+    const { data: video } = await supabase
+      .from("videos")
+      .select("title, slug, status, video_type")
+      .eq("id", id)
+      .single();
+
     const { error } = await supabase.from("videos").delete().eq("id", id);
 
     if (error) {
@@ -244,11 +300,83 @@ export async function deleteVideo(id: string) {
       return { error: error.message };
     }
 
+    // Log audit event
+    await logAuditEvent({
+      action: "delete",
+      entityType: "video",
+      entityId: id,
+      oldValues: video ? {
+        title: video.title,
+        slug: video.slug,
+        status: video.status,
+        video_type: video.video_type,
+      } : undefined,
+    });
+
     revalidatePath("/admin/videos");
     return { error: null };
   } catch (err) {
     console.error("Unexpected error deleting video:", err);
     return { error: "Failed to delete video" };
+  }
+}
+
+/**
+ * Toggle video publish status (publish/unpublish)
+ */
+export async function toggleVideoStatus(id: string, currentStatus: string) {
+  const supabase = await createClient();
+
+  try {
+    const newStatus = currentStatus === "published" ? "draft" : "published";
+    const publishedAt = newStatus === "published" ? new Date().toISOString() : null;
+
+    // Get old video data for audit log
+    const { data: oldVideo } = await supabase
+      .from("videos")
+      .select("title, status")
+      .eq("id", id)
+      .single();
+
+    const { data, error } = await supabase
+      .from("videos")
+      .update({
+        status: newStatus,
+        published_at: publishedAt,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error toggling video status:", error);
+      return { data: null, error: error.message };
+    }
+
+    // Log audit event
+    await logAuditEvent({
+      action: "update",
+      entityType: "video",
+      entityId: id,
+      oldValues: oldVideo ? {
+        title: oldVideo.title,
+        status: oldVideo.status,
+      } : undefined,
+      newValues: {
+        title: data.title,
+        status: data.status,
+      },
+      metadata: {
+        action: newStatus === "published" ? "published" : "unpublished",
+      },
+    });
+
+    revalidatePath("/admin/videos");
+    return { data: data as Video, error: null };
+  } catch (err) {
+    console.error("Unexpected error toggling video status:", err);
+    return { data: null, error: "Failed to toggle video status" };
   }
 }
 

@@ -250,4 +250,34 @@ export async function deleteProgramme(id: string) {
   }
 }
 
+/**
+ * Toggle programme active status
+ */
+export async function toggleProgrammeStatus(id: string, currentStatus: boolean) {
+  const supabase = await createClient();
+
+  try {
+    const newStatus = !currentStatus;
+
+    const { error } = await supabase
+      .from("programmes")
+      .update({
+        is_active: newStatus,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id);
+
+    if (error) {
+      console.error("Error toggling programme status:", error);
+      return { success: false, error: error.message };
+    }
+
+    revalidatePath("/admin/programmes");
+    return { success: true, error: null };
+  } catch (err) {
+    console.error("Error toggling programme status:", err);
+    return { success: false, error: "Failed to toggle programme status" };
+  }
+}
+
 

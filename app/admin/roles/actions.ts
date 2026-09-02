@@ -223,21 +223,36 @@ export async function getUsers() {
       email,
       full_name,
       avatar_url,
-      created_at,
-      user_roles (
-        id,
-        role_id,
-        roles (
-          id,
-          name
-        )
-      )
+      created_at
     `)
     .order("created_at", { ascending: false });
 
   if (error) {
     console.error("Error fetching users:", error);
     return { error: error.message, data: null };
+  }
+
+  // Fetch user roles separately to avoid ambiguity
+  if (profiles && profiles.length > 0) {
+    const userIds = profiles.map(p => p.id);
+    
+    const { data: userRoles } = await supabase
+      .from("user_roles")
+      .select(`
+        id,
+        user_id,
+        role_id,
+        roles (
+          id,
+          name
+        )
+      `)
+      .in("user_id", userIds);
+
+    // Attach roles to each profile
+    profiles.forEach(profile => {
+      profile.user_roles = userRoles?.filter(ur => ur.user_id === profile.id) || [];
+    });
   }
 
   return { data: profiles, error: null };

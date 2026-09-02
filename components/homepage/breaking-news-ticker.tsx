@@ -1,39 +1,18 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Flame } from "lucide-react";
+import { Flame, Megaphone } from "lucide-react";
 import { getActiveBreakingNews, type BreakingNews } from "@/app/actions/breaking-news";
 
 export function BreakingNewsTicker() {
   const [breakingNews, setBreakingNews] = useState<BreakingNews[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [isTransitioning, setIsTransitioning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Auto-rotation interval (8 seconds)
-  const ROTATION_INTERVAL = 8000;
-  const TRANSITION_DURATION = 300;
 
   useEffect(() => {
     loadBreakingNews();
   }, []);
-
-  useEffect(() => {
-    if (breakingNews.length <= 1 || isPaused) return;
-
-    timerRef.current = setInterval(() => {
-      handleNext();
-    }, ROTATION_INTERVAL);
-
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-    };
-  }, [currentIndex, breakingNews.length, isPaused]);
 
   const loadBreakingNews = async () => {
     setLoading(true);
@@ -44,52 +23,6 @@ export function BreakingNewsTicker() {
     setLoading(false);
   };
 
-  const handleNext = () => {
-    if (isTransitioning || breakingNews.length <= 1) return;
-
-    setIsTransitioning(true);
-    setCurrentIndex((prev) => (prev + 1) % breakingNews.length);
-
-    setTimeout(() => {
-      setIsTransitioning(false);
-    }, TRANSITION_DURATION);
-  };
-
-  const handlePrevious = () => {
-    if (isTransitioning || breakingNews.length <= 1) return;
-
-    setIsTransitioning(true);
-    setCurrentIndex((prev) => (prev - 1 + breakingNews.length) % breakingNews.length);
-
-    setTimeout(() => {
-      setIsTransitioning(false);
-    }, TRANSITION_DURATION);
-  };
-
-  const handleDotClick = (index: number) => {
-    if (isTransitioning || index === currentIndex) return;
-
-    setIsTransitioning(true);
-    setCurrentIndex(index);
-
-    setTimeout(() => {
-      setIsTransitioning(false);
-    }, TRANSITION_DURATION);
-  };
-
-  const getTimeAgo = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMins / 60);
-
-    if (diffMins < 1) return "Just now";
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    return date.toLocaleDateString();
-  };
-
   // Don't show ticker if no breaking news
   if (!loading && breakingNews.length === 0) {
     return null;
@@ -97,26 +30,86 @@ export function BreakingNewsTicker() {
 
   if (loading) {
     return (
-      <div className="border-b border-border bg-vntv-red/5">
+      <div className="border-b border-border bg-background-panel">
         <div className="container mx-auto px-4">
           <div className="flex h-12 items-center gap-4">
-            <div className="flex h-6 w-20 animate-pulse items-center gap-1 rounded bg-vntv-red/20" />
-            <div className="h-4 flex-1 animate-pulse rounded bg-background-panel" />
+            <div className="h-6 w-20 animate-pulse rounded bg-background-secondary" />
+            <div className="h-4 flex-1 animate-pulse rounded bg-background-secondary" />
           </div>
         </div>
       </div>
     );
   }
 
-  const currentNews = breakingNews[currentIndex];
+  return (
+    <div className="border-b border-border bg-background-panel overflow-hidden">
+      <div 
+        className="relative h-12"
+        onMouseEnter={() => setIsPaused(true)}
+        onMouseLeave={() => setIsPaused(false)}
+      >
+        {/* Marquee Container */}
+        <div className="absolute inset-0 flex items-center">
+          <div className="container mx-auto px-4 flex items-center gap-3 overflow-hidden">
+            {/* Static Label */}
+            <div className="flex-shrink-0 flex items-center gap-1.5 rounded bg-vntv-red px-3 py-1 text-xs font-bold uppercase text-white">
+              <Flame className="h-3.5 w-3.5" />
+              <span>Live</span>
+            </div>
+
+            {/* Scrolling Content */}
+            <div className="flex-1 overflow-hidden relative">
+              <div className={`flex gap-8 ${isPaused ? '' : 'animate-scroll'}`}>
+                {/* First Set of Items */}
+                {breakingNews.map((news, index) => (
+                  <NewsItem key={`news-${index}`} news={news} />
+                ))}
+                
+                {/* Duplicate for Seamless Loop (only if we have items) */}
+                {breakingNews.length > 0 && breakingNews.map((news, index) => (
+                  <NewsItem key={`news-dup-${index}`} news={news} />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Add CSS for scrolling animation */}
+      <style jsx>{`
+        @keyframes scroll {
+          0% {
+            transform: translateX(0);
+          }
+          100% {
+            transform: translateX(-50%);
+          }
+        }
+
+        .animate-scroll {
+          animation: scroll 60s linear infinite;
+        }
+
+        /* Adjust speed based on number of items */
+        .animate-scroll {
+          animation-duration: ${Math.max(30, breakingNews.length * 10)}s;
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// Separate NewsItem component for rendering individual news/announcement
+function NewsItem({ news }: { news: BreakingNews }) {
+  const isBreaking = news.type === 'breaking';
   
-  // Determine link href
+  // Determine link
   const getLink = () => {
-    if (currentNews.article_id && currentNews.article) {
-      return `/news/${currentNews.article.slug}`;
+    if (news.article_id && news.article) {
+      return `/news/${news.article.slug}`;
     }
-    if (currentNews.link_url) {
-      return currentNews.link_url;
+    if (news.link_url) {
+      return news.link_url;
     }
     return null;
   };
@@ -124,108 +117,51 @@ export function BreakingNewsTicker() {
   const link = getLink();
   const isExternalLink = link?.startsWith("http");
 
-  return (
-    <div className="border-b border-border bg-vntv-red/5">
-      <div className="container mx-auto px-4">
-        <div 
-          className="flex items-center gap-4 py-2"
-          onMouseEnter={() => setIsPaused(true)}
-          onMouseLeave={() => setIsPaused(false)}
-        >
-          {/* Breaking Badge */}
-          <div className="flex items-center gap-1.5 rounded bg-vntv-red px-3 py-1 text-xs font-bold uppercase text-white">
-            <Flame className="h-3.5 w-3.5 animate-pulse" />
-            <span>Breaking</span>
-          </div>
+  const content = (
+    <div className="flex items-center gap-2 flex-shrink-0 group">
+      {/* Type Badge */}
+      {isBreaking ? (
+        <span className="flex items-center gap-1 rounded bg-red-600 px-2 py-0.5 text-xs font-bold text-white">
+          <Flame className="h-3 w-3" />
+          BREAKING
+        </span>
+      ) : (
+        <span className="flex items-center gap-1 rounded bg-blue-600 px-2 py-0.5 text-xs font-bold text-white">
+          <Megaphone className="h-3 w-3" />
+          ANNOUNCEMENT
+        </span>
+      )}
 
-          {/* News Content */}
-          <div 
-            className={`flex-1 overflow-hidden transition-opacity duration-${TRANSITION_DURATION} ${
-              isTransitioning ? "opacity-0" : "opacity-100"
-            }`}
-          >
-            {link ? (
-              isExternalLink ? (
-                <a
-                  href={link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex items-center gap-3 transition-opacity hover:opacity-80"
-                >
-                  <span className="truncate text-sm font-medium text-text-primary group-hover:text-vntv-red transition-colors">
-                    {currentNews.headline_override}
-                  </span>
-                  <span className="flex-shrink-0 text-xs text-text-tertiary">
-                    {getTimeAgo(currentNews.starts_at)}
-                  </span>
-                </a>
-              ) : (
-                <Link
-                  href={link}
-                  className="group flex items-center gap-3 transition-opacity hover:opacity-80"
-                >
-                  <span className="truncate text-sm font-medium text-text-primary group-hover:text-vntv-red transition-colors">
-                    {currentNews.headline_override}
-                  </span>
-                  <span className="flex-shrink-0 text-xs text-text-tertiary">
-                    {getTimeAgo(currentNews.starts_at)}
-                  </span>
-                </Link>
-              )
-            ) : (
-              <div className="flex items-center gap-3">
-                <span className="truncate text-sm font-medium text-text-primary">
-                  {currentNews.headline_override}
-                </span>
-                <span className="flex-shrink-0 text-xs text-text-tertiary">
-                  {getTimeAgo(currentNews.starts_at)}
-                </span>
-              </div>
-            )}
-          </div>
+      {/* Headline */}
+      <span className="whitespace-nowrap text-sm font-medium text-text-primary group-hover:text-vntv-red transition-colors">
+        {news.headline_override}
+      </span>
 
-          {/* Navigation Arrows (only show if multiple items) */}
-          {breakingNews.length > 1 && (
-            <div className="flex items-center gap-1">
-              <button
-                onClick={handlePrevious}
-                disabled={isTransitioning}
-                className="flex h-8 w-8 items-center justify-center rounded-full text-text-secondary transition-colors hover:bg-background-panel hover:text-text-primary disabled:opacity-50 disabled:cursor-not-allowed"
-                aria-label="Previous breaking news"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <button
-                onClick={handleNext}
-                disabled={isTransitioning}
-                className="flex h-8 w-8 items-center justify-center rounded-full text-text-secondary transition-colors hover:bg-background-panel hover:text-text-primary disabled:opacity-50 disabled:cursor-not-allowed"
-                aria-label="Next breaking news"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-          )}
-
-          {/* Counter (only show if multiple items) */}
-          {breakingNews.length > 1 && (
-            <div className="hidden sm:flex items-center gap-1">
-              {breakingNews.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleDotClick(index)}
-                  disabled={isTransitioning}
-                  className={`h-1.5 rounded-full transition-all disabled:cursor-not-allowed ${
-                    index === currentIndex
-                      ? "w-6 bg-vntv-red"
-                      : "w-1.5 bg-border hover:bg-text-tertiary"
-                  }`}
-                  aria-label={`Go to breaking news ${index + 1}`}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
+      {/* Separator */}
+      <span className="text-text-tertiary mx-2">•</span>
     </div>
+  );
+
+  if (!link) {
+    return content;
+  }
+
+  if (isExternalLink) {
+    return (
+      <a
+        href={link}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="cursor-pointer"
+      >
+        {content}
+      </a>
+    );
+  }
+
+  return (
+    <Link href={link} className="cursor-pointer">
+      {content}
+    </Link>
   );
 }

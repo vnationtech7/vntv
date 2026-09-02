@@ -25,6 +25,9 @@ export default function BreakingNewsForm({
 
   // Form fields
   const [headline, setHeadline] = useState(initialData?.headline_override || "");
+  const [type, setType] = useState<'breaking' | 'announcement'>(
+    initialData?.type || 'breaking'
+  );
   const [articleId, setArticleId] = useState<string | null>(
     initialData?.article_id || null
   );
@@ -129,6 +132,7 @@ export default function BreakingNewsForm({
     try {
       const newsData = {
         headline_override: headline.trim(),
+        type: type,
         article_id: linkType === "article" ? articleId : null,
         link_url: linkType === "url" ? linkUrl.trim() : null,
         priority,
@@ -185,6 +189,43 @@ export default function BreakingNewsForm({
         <p className="text-sm text-gray-600 mt-1">
           Keep it concise - will appear in the ticker
         </p>
+      </div>
+
+      {/* Type Selection */}
+      <div>
+        <label className="block text-sm font-semibold text-gray-900 mb-2">
+          Type *
+        </label>
+        <div className="grid grid-cols-2 gap-4">
+          <button
+            type="button"
+            onClick={() => setType('breaking')}
+            className={`p-4 border-2 rounded-lg transition-all ${
+              type === 'breaking'
+                ? "border-red-600 bg-red-50"
+                : "border-gray-200 hover:border-gray-300"
+            }`}
+          >
+            <div className="text-center">
+              <p className="font-medium text-gray-900">🔥 Breaking News</p>
+              <p className="text-xs text-gray-600 mt-1">Urgent news alerts</p>
+            </div>
+          </button>
+          <button
+            type="button"
+            onClick={() => setType('announcement')}
+            className={`p-4 border-2 rounded-lg transition-all ${
+              type === 'announcement'
+                ? "border-blue-600 bg-blue-50"
+                : "border-gray-200 hover:border-gray-300"
+            }`}
+          >
+            <div className="text-center">
+              <p className="font-medium text-gray-900">📢 Announcement</p>
+              <p className="text-xs text-gray-600 mt-1">General notices</p>
+            </div>
+          </button>
+        </div>
       </div>
 
       {/* Link Type Selection */}

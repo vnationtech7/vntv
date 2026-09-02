@@ -564,13 +564,21 @@ export async function getSocialLinks(): Promise<{
   const result = await getAllSettings();
   if (!result.success || !result.data) return {};
   
+  // Helper to clean URL (remove extra quotes if present)
+  const cleanUrl = (url: string | undefined): string | undefined => {
+    if (!url) return undefined;
+    // Remove surrounding quotes if they exist
+    const cleaned = url.replace(/^["']|["']$/g, '').trim();
+    return cleaned || undefined;
+  };
+  
   return {
-    facebook: result.data.global.social_facebook,
-    twitter: result.data.global.social_twitter,
-    instagram: result.data.global.social_instagram,
-    youtube: result.data.global.social_youtube,
-    tiktok: result.data.global.social_tiktok,
-    linkedin: result.data.global.social_linkedin,
+    facebook: cleanUrl(result.data.global.social_facebook),
+    twitter: cleanUrl(result.data.global.social_twitter),
+    instagram: cleanUrl(result.data.global.social_instagram),
+    youtube: cleanUrl(result.data.global.social_youtube),
+    tiktok: cleanUrl(result.data.global.social_tiktok),
+    linkedin: cleanUrl(result.data.global.social_linkedin),
   };
 }
 

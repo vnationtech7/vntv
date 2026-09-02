@@ -305,4 +305,36 @@ export async function deleteEpisode(id: string, programmeId: string) {
   }
 }
 
+/**
+ * Toggle episode published status
+ */
+export async function toggleEpisodeStatus(id: string, programmeId: string, currentStatus: string) {
+  const supabase = await createClient();
+
+  try {
+    const newStatus = currentStatus === "published" ? "draft" : "published";
+    const publishedAt = newStatus === "published" ? new Date().toISOString() : null;
+
+    const { error } = await supabase
+      .from("episodes")
+      .update({
+        status: newStatus,
+        published_at: publishedAt,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id);
+
+    if (error) {
+      console.error("Error toggling episode status:", error);
+      return { success: false, error: error.message };
+    }
+
+    revalidatePath(`/admin/programmes/${programmeId}/episodes`);
+    return { success: true, error: null };
+  } catch (err) {
+    console.error("Error toggling episode status:", err);
+    return { success: false, error: "Failed to toggle episode status" };
+  }
+}
+
 

@@ -75,8 +75,15 @@ export async function trackVideoView(videoId: string) {
     const viewedKey = `video_viewed_${videoId}`;
     const hasViewed = cookieStore.get(viewedKey);
 
+    console.log('[VIDEO ANALYTICS] trackVideoView:', {
+      videoId,
+      hasViewed: !!hasViewed,
+      timestamp: new Date().toISOString()
+    });
+
     if (hasViewed) {
       // Already counted this view
+      console.log('[VIDEO ANALYTICS] View already counted (cookie exists)');
       return { success: true, counted: false };
     }
 
@@ -86,9 +93,11 @@ export async function trackVideoView(videoId: string) {
     });
 
     if (error) {
-      console.error('Error incrementing video view:', error);
-      return { success: false, counted: false };
+      console.error('[VIDEO ANALYTICS] Error incrementing video view:', error);
+      return { success: false, counted: false, error: error.message };
     }
+
+    console.log('[VIDEO ANALYTICS] View counted successfully');
 
     // Set cookie to prevent duplicate counting (expires in 24 hours)
     cookieStore.set(viewedKey, '1', {
@@ -104,8 +113,8 @@ export async function trackVideoView(videoId: string) {
 
     return { success: true, counted: true };
   } catch (err) {
-    console.error('Error tracking video view:', err);
-    return { success: false, counted: false };
+    console.error('[VIDEO ANALYTICS] Exception tracking video view:', err);
+    return { success: false, counted: false, error: String(err) };
   }
 }
 

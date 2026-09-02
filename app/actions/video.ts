@@ -33,12 +33,16 @@ export async function getVideo(slug: string) {
   const supabase = await createClient();
 
   try {
+    console.log('[getVideo] Fetching video with slug:', slug);
+    
     const { data: video, error }: { data: any; error: any } = await supabase
       .from("videos")
       .select("id, title, slug, description, source_type, source_url, duration_seconds, view_count, published_at, video_type, thumbnail_id")
       .eq("slug", slug)
       .eq("status", "published")
       .single();
+
+    console.log('[getVideo] Query result:', { video, error });
 
     if (error) {
       console.error("Error fetching video:", error);

@@ -20,18 +20,11 @@ import { FaFacebook, FaXTwitter, FaYoutube, FaInstagram, FaTiktok } from "react-
 
 const navigation = [
   { name: "Home", href: "/" },
-  { name: "Ghana", href: "/category/ghana" },
-  { name: "Nigeria", href: "/category/nigeria" },
-  { name: "Africa", href: "/category/africa" },
-  { name: "World", href: "/category/world" },
-  { name: "Politics", href: "/category/politics" },
-  { name: "Business", href: "/category/business" },
-  { name: "Entertainment", href: "/category/entertainment" },
-  { name: "Sports", href: "/category/sports" },
-  { name: "Viral", href: "/category/viral" },
-  { name: "Opinion", href: "/category/opinion" },
-  { name: "Video", href: "/video" },
-  { name: "Originals", href: "/originals" },
+  { name: "Video", href: "/videos" },
+  { name: "Article", href: "/news" },
+  { name: "News", href: "/rss-feeds" },
+  { name: "Shorts", href: "/videos?type=short" },
+  { name: "VNTV & Originals", href: "/originals" },
 ];
 
 const socialLinks = [

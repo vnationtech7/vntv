@@ -130,8 +130,8 @@ export async function getAuditLogs(params: {
       query = query.lte("created_at", params.filters.endDate);
     }
     if (params.filters?.search) {
-      // Search in entity_id (for slugs, IDs, etc.)
-      query = query.or(`entity_id.ilike.%${params.filters.search}%`);
+      // Search in entity_type and action fields (both are text)
+      query = query.or(`entity_type.ilike.%${params.filters.search}%,action.ilike.%${params.filters.search}%`);
     }
 
     // Apply pagination

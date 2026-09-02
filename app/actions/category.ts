@@ -178,6 +178,178 @@ export async function getCategoryArticles(
 }
 
 /**
+ * Get unified content feed (Articles + RSS Items) for a category
+ */
+export async function getCategoryContent(
+  categorySlug: string,
+  options: {
+    subcategorySlug?: string;
+    sortBy?: "latest" | "trending" | "featured";
+    page?: number;
+    limit?: number;
+  } = {}
+) {
+  const supabase = await createClient();
+  const { subcategorySlug, sortBy = "latest", page = 1, limit = 24 } = options;
+
+  try {
+    // Get category ID
+    const { data: category } = await supabase
+      .from("categories")
+      .select("id, name, slug")
+      .eq("slug", categorySlug)
+      .eq("is_active", true)
+      .single();
+
+    if (!category) {
+      return { data: null, total: 0, error: "Category not found" };
+    }
+
+    let categoryId = category.id;
+
+    // If subcategory specified, get its ID
+    if (subcategorySlug) {
+      const { data: subcategory } = await supabase
+        .from("categories")
+        .select("id")
+        .eq("slug", subcategorySlug)
+        .eq("parent_id", category.id)
+        .eq("is_active", true)
+        .single();
+
+      if (subcategory) {
+        categoryId = subcategory.id;
+      }
+    }
+
+    // Fetch both articles and RSS items in parallel
+    const [articlesResult, rssItemsResult] = await Promise.all([
+      // Fetch articles
+      supabase
+        .from("articles")
+        .select(`
+          id,
+          title,
+          slug,
+          excerpt,
+          published_at,
+          category_id,
+          author_id,
+          featured_image_id,
+          view_count,
+          is_featured
+        `)
+        .eq("status", "published")
+        .eq("category_id", categoryId)
+        .not("published_at", "is", null),
+
+      // Fetch RSS items for this category
+      supabase
+        .from("rss_items")
+        .select(`
+          id,
+          title,
+          description,
+          url,
+          image_url,
+          author,
+          published_at,
+          feed:rss_feeds!inner(
+            id,
+            name,
+            source_name,
+            category_id
+          )
+        `)
+        .eq("status", "approved")
+        .eq("feed.category_id", categoryId)
+        .not("published_at", "is", null),
+    ]);
+
+    // Process articles
+    const articles = articlesResult.data || [];
+    const rssItems = rssItemsResult.data || [];
+
+    // Get related data for articles
+    const authorIds = articles.map((a) => a.author_id).filter(Boolean);
+    const imageIds = articles.map((a) => a.featured_image_id).filter(Boolean);
+
+    const [authorsResult, imagesResult] = await Promise.all([
+      authorIds.length > 0
+        ? supabase.from("authors").select("id, name, slug").in("id", authorIds)
+        : { data: [], error: null },
+      imageIds.length > 0
+        ? supabase.from("media_assets").select("id, storage_path, alt_text").in("id", imageIds)
+        : { data: [], error: null },
+    ]);
+
+    const authorsMap = new Map(authorsResult.data?.map((a: any) => [a.id, a]) || []);
+    const imagesMap = new Map(imagesResult.data?.map((i: any) => [i.id, i]) || []);
+
+    // Transform articles to unified format
+    const articleItems = articles.map((article) => ({
+      id: article.id,
+      type: "article" as const,
+      title: article.title,
+      slug: article.slug,
+      description: article.excerpt,
+      published_at: article.published_at,
+      image: article.featured_image_id ? imagesMap.get(article.featured_image_id) : null,
+      author: article.author_id ? authorsMap.get(article.author_id) : null,
+      category: category,
+      view_count: article.view_count || 0,
+      is_featured: article.is_featured || false,
+      url: `/news/${article.slug}`,
+    }));
+
+    // Transform RSS items to unified format
+    const rssItemItems = rssItems.map((item: any) => ({
+      id: item.id,
+      type: "rss" as const,
+      title: item.title,
+      slug: null,
+      description: item.description,
+      published_at: item.published_at,
+      image: item.image_url ? { storage_path: null, url: item.image_url } : null,
+      author: item.author ? { name: item.author, slug: null } : null,
+      category: category,
+      feed: item.feed,
+      view_count: 0,
+      is_featured: false,
+      url: `/rss/${item.id}`,
+    }));
+
+    // Combine and sort by published_at
+    let combined = [...articleItems, ...rssItemItems];
+
+    // Apply sorting
+    if (sortBy === "latest") {
+      combined.sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime());
+    } else if (sortBy === "trending") {
+      combined.sort((a, b) => b.view_count - a.view_count);
+    } else if (sortBy === "featured") {
+      combined = combined.filter(item => item.is_featured);
+      combined.sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime());
+    }
+
+    // Apply pagination
+    const total = combined.length;
+    const from = (page - 1) * limit;
+    const to = from + limit;
+    const paginatedContent = combined.slice(from, to);
+
+    return {
+      data: paginatedContent,
+      total,
+      error: null,
+    };
+  } catch (err) {
+    console.error("Error fetching category content:", err);
+    return { data: null, total: 0, error: "Failed to fetch content" };
+  }
+}
+
+/**
  * Get all active categories for navigation
  */
 export async function getAllCategories() {

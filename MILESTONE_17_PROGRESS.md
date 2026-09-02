@@ -163,11 +163,11 @@
 - [ ] setArticleFeatured() - log "feature" or "unfeature"
 - [ ] setArticleBreaking() - log "update"
 
-**Videos:**
-- [ ] createVideo() - log "create"
-- [ ] updateVideo() - log "update" with old/new values
-- [ ] deleteVideo() - log "delete" with old values
-- [ ] publishVideo() - log "publish"
+**Videos:** ✅ **INTEGRATED** (September 1, 2026)
+- [x] createVideo() - log "create"
+- [x] updateVideo() - log "update" with old/new values
+- [x] deleteVideo() - log "delete" with old values
+- [ ] publishVideo() - log "publish" (if separate action exists)
 
 **Categories:**
 - [ ] createCategory() - log "create"

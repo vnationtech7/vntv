@@ -9,6 +9,7 @@ export type BreakingNews = {
   headline_override: string;
   article_id: string | null;
   link_url: string | null;
+  type: 'breaking' | 'announcement';
   priority: number;
   starts_at: string;
   expires_at: string | null;
