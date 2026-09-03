@@ -377,6 +377,34 @@ export async function updateRssItemStatus(
 }
 
 /**
+ * Update RSS item title
+ */
+export async function updateRssItemTitle(id: string, title: string) {
+  const supabase = await createClient();
+
+  try {
+    const { data, error } = await supabase
+      .from("rss_items")
+      .update({ title: title.trim() })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error updating RSS item title:", error);
+      return { data: null, error: error.message };
+    }
+
+    revalidatePath("/admin/rss/items");
+    
+    return { data, error: null };
+  } catch (err) {
+    console.error("Error updating RSS item title:", err);
+    return { data: null, error: "Failed to update RSS item title" };
+  }
+}
+
+/**
  * Get RSS import logs
  */
 export async function getRssImportLogs(feedId?: string, limit: number = 50) {

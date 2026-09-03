@@ -29,28 +29,56 @@ export async function getAnalyticsSummary(timeRange: "today" | "week" | "month" 
         break;
     }
 
-    // Get article views count
-    let articleViewsQuery = supabase
-      .from("article_views")
-      .select("id", { count: "exact", head: true });
+    // For articles: Use article_views for time-filtered data OR cumulative view_count for "all time"
+    let articleViews = 0;
+    
+    if (timeRange === "all") {
+      // All time: use cumulative view_count from articles table
+      const { data: articlesData } = await supabase
+        .from("articles")
+        .select("view_count")
+        .eq("status", "published");
 
-    if (startDate) {
-      articleViewsQuery = articleViewsQuery.gte("viewed_at", startDate.toISOString());
+      articleViews = articlesData?.reduce((sum, article) => sum + (article.view_count || 0), 0) || 0;
+    } else {
+      // Time-filtered: count ALL view events from article_views table (including deleted articles)
+      let articleViewsQuery = supabase
+        .from("article_views")
+        .select("id", { count: "exact", head: true });
+
+      if (startDate) {
+        articleViewsQuery = articleViewsQuery.gte("viewed_at", startDate.toISOString());
+      }
+
+      const { count: articleViewEvents } = await articleViewsQuery;
+      articleViews = articleViewEvents || 0;
     }
 
-    const { count: articleViews } = await articleViewsQuery;
+    // For videos: Use video_analytics for ALL view events (including deleted videos)
+    let videoViews = 0;
+    
+    if (timeRange === "all") {
+      // All time: Count ALL view events from video_analytics (including deleted videos)
+      const { count: allVideoViews } = await supabase
+        .from("video_analytics")
+        .select("id", { count: "exact", head: true })
+        .eq("event_type", "view");
 
-    // Get video views count
-    let videoViewsQuery = supabase
-      .from("video_analytics")
-      .select("id", { count: "exact", head: true })
-      .eq("event_type", "view");
+      videoViews = allVideoViews || 0;
+    } else {
+      // Time-filtered: count view events from video_analytics table in time range
+      let videoAnalyticsQuery = supabase
+        .from("video_analytics")
+        .select("id", { count: "exact", head: true })
+        .eq("event_type", "view");
 
-    if (startDate) {
-      videoViewsQuery = videoViewsQuery.gte("created_at", startDate.toISOString());
+      if (startDate) {
+        videoAnalyticsQuery = videoAnalyticsQuery.gte("created_at", startDate.toISOString());
+      }
+
+      const { count: videoViewEvents } = await videoAnalyticsQuery;
+      videoViews = videoViewEvents || 0;
     }
-
-    const { count: videoViews } = await videoViewsQuery;
 
     // Get social shares count
     let sharesQuery = supabase
@@ -205,7 +233,7 @@ export async function getTopVideos(limit: number = 10, timeRange: "week" | "mont
 }
 
 /**
- * Get category performance analytics
+ * Get category performance analytics (includes articles AND RSS items)
  */
 export async function getCategoryPerformance(limit: number = 10) {
   const supabase = await createClient();
@@ -221,27 +249,45 @@ export async function getCategoryPerformance(limit: number = 10) {
       return { data: [], error: error?.message || "Failed to fetch categories" };
     }
 
-    // Get article counts and views for each category
+    // Get article counts, views, and RSS item counts for each category
     const categoryStats = await Promise.all(
       categories.map(async (category) => {
+        // Article count
         const { count: articleCount } = await supabase
           .from("articles")
           .select("id", { count: "exact", head: true })
           .eq("category_id", category.id)
           .eq("status", "published");
 
+        // Article views
         const { data: articles } = await supabase
           .from("articles")
           .select("view_count")
           .eq("category_id", category.id)
           .eq("status", "published");
 
-        const totalViews = articles?.reduce((sum, article) => sum + (article.view_count || 0), 0) || 0;
+        const articleViews = articles?.reduce((sum, article) => sum + (article.view_count || 0), 0) || 0;
+
+        // RSS items count (approved)
+        const { count: rssItemCount } = await supabase
+          .from("rss_items")
+          .select("id", { count: "exact", head: true })
+          .eq("feed.category_id", category.id)
+          .eq("status", "approved");
+
+        // RSS feeds in this category
+        const { count: rssFeedCount } = await supabase
+          .from("rss_feeds")
+          .select("id", { count: "exact", head: true })
+          .eq("category_id", category.id);
 
         return {
           ...category,
           article_count: articleCount || 0,
-          total_views: totalViews,
+          rss_item_count: rssItemCount || 0,
+          rss_feed_count: rssFeedCount || 0,
+          total_content: (articleCount || 0) + (rssItemCount || 0),
+          total_views: articleViews,
         };
       })
     );
@@ -485,5 +531,251 @@ export async function getVideoEngagementMetrics(videoId?: string) {
   } catch (error) {
     console.error("Error fetching video engagement metrics:", error);
     return { data: null, error: "Failed to fetch video engagement metrics" };
+  }
+}
+
+
+/**
+ * Get views over time for charts (daily data for the past week/month)
+ */
+export async function getViewsOverTime(days: number = 7) {
+  const supabase = await createClient();
+
+  try {
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+
+    // Generate array of dates
+    const dates: string[] = [];
+    for (let i = 0; i < days; i++) {
+      const date = new Date(startDate);
+      date.setDate(date.getDate() + i);
+      dates.push(date.toISOString().split('T')[0]);
+    }
+
+    // Get articles with views
+    const { data: articles } = await supabase
+      .from("articles")
+      .select("view_count, published_at")
+      .eq("status", "published")
+      .gte("published_at", startDate.toISOString())
+      .lte("published_at", endDate.toISOString());
+
+    // Get videos with views
+    const { data: videos } = await supabase
+      .from("videos")
+      .select("view_count, published_at")
+      .eq("status", "published")
+      .gte("published_at", startDate.toISOString())
+      .lte("published_at", endDate.toISOString());
+
+    // Group by date
+    const dataByDate = dates.map(date => {
+      const articlesOnDate = articles?.filter(a => 
+        a.published_at?.startsWith(date)
+      ) || [];
+      
+      const videosOnDate = videos?.filter(v =>
+        v.published_at?.startsWith(date)
+      ) || [];
+
+      const articleViews = articlesOnDate.reduce((sum, a) => sum + (a.view_count || 0), 0);
+      const videoViews = videosOnDate.reduce((sum, v) => sum + (v.view_count || 0), 0);
+
+      return {
+        date: date,
+        dateLabel: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        articleViews,
+        videoViews,
+        totalViews: articleViews + videoViews,
+        articlesPublished: articlesOnDate.length,
+        videosPublished: videosOnDate.length,
+      };
+    });
+
+    return { data: dataByDate, error: null };
+  } catch (error) {
+    console.error("Error fetching views over time:", error);
+    return { data: [], error: "Failed to fetch views over time" };
+  }
+}
+
+/**
+ * Get content type distribution for pie charts
+ */
+export async function getContentTypeDistribution() {
+  const supabase = await createClient();
+
+  try {
+    // Get article stats
+    const { data: articles } = await supabase
+      .from("articles")
+      .select("view_count")
+      .eq("status", "published");
+
+    // Get video stats by type
+    const { data: fullVideos } = await supabase
+      .from("videos")
+      .select("view_count")
+      .eq("status", "published")
+      .eq("video_type", "full");
+
+    const { data: shorts } = await supabase
+      .from("videos")
+      .select("view_count")
+      .eq("status", "published")
+      .eq("video_type", "short");
+
+    const { data: clips } = await supabase
+      .from("videos")
+      .select("view_count")
+      .eq("status", "published")
+      .eq("video_type", "clip");
+
+    const articleViews = articles?.reduce((sum, a) => sum + (a.view_count || 0), 0) || 0;
+    const fullVideoViews = fullVideos?.reduce((sum, v) => sum + (v.view_count || 0), 0) || 0;
+    const shortViews = shorts?.reduce((sum, s) => sum + (s.view_count || 0), 0) || 0;
+    const clipViews = clips?.reduce((sum, c) => sum + (c.view_count || 0), 0) || 0;
+
+    return {
+      data: [
+        { name: "Articles", value: articleViews, count: articles?.length || 0 },
+        { name: "Full Videos", value: fullVideoViews, count: fullVideos?.length || 0 },
+        { name: "Shorts", value: shortViews, count: shorts?.length || 0 },
+        { name: "Clips", value: clipViews, count: clips?.length || 0 },
+      ],
+      error: null,
+    };
+  } catch (error) {
+    console.error("Error fetching content type distribution:", error);
+    return { data: [], error: "Failed to fetch content distribution" };
+  }
+}
+
+
+/**
+ * Get RSS analytics summary
+ */
+export async function getRssAnalytics(timeRange: "week" | "month" | "all" = "week") {
+  const supabase = await createClient();
+
+  try {
+    let startDate: Date | null = null;
+
+    if (timeRange === "week") {
+      startDate = new Date();
+      startDate.setDate(startDate.getDate() - 7);
+    } else if (timeRange === "month") {
+      startDate = new Date();
+      startDate.setDate(startDate.getDate() - 30);
+    }
+
+    // Total RSS items
+    let itemsQuery = supabase
+      .from("rss_items")
+      .select("id, status, fetched_at", { count: "exact" });
+
+    if (startDate) {
+      itemsQuery = itemsQuery.gte("fetched_at", startDate.toISOString());
+    }
+
+    const { data: items, count: totalItems } = await itemsQuery;
+
+    const pendingItems = items?.filter(i => i.status === "pending").length || 0;
+    const approvedItems = items?.filter(i => i.status === "approved").length || 0;
+    const rejectedItems = items?.filter(i => i.status === "rejected").length || 0;
+    const publishedItems = items?.filter(i => i.status === "published").length || 0;
+
+    // Active feeds
+    const { count: totalFeeds } = await supabase
+      .from("rss_feeds")
+      .select("id", { count: "exact", head: true });
+
+    const { count: activeFeeds } = await supabase
+      .from("rss_feeds")
+      .select("id", { count: "exact", head: true })
+      .eq("is_enabled", true);
+
+    return {
+      data: {
+        totalItems: totalItems || 0,
+        pendingItems,
+        approvedItems,
+        rejectedItems,
+        publishedItems,
+        totalFeeds: totalFeeds || 0,
+        activeFeeds: activeFeeds || 0,
+      },
+      error: null,
+    };
+  } catch (error) {
+    console.error("Error fetching RSS analytics:", error);
+    return { data: null, error: "Failed to fetch RSS analytics" };
+  }
+}
+
+/**
+ * Get video engagement breakdown (all event types)
+ */
+export async function getVideoEngagementBreakdown(timeRange: "week" | "month" | "all" = "week") {
+  const supabase = await createClient();
+
+  try {
+    let startDate: Date | null = null;
+
+    if (timeRange === "week") {
+      startDate = new Date();
+      startDate.setDate(startDate.getDate() - 7);
+    } else if (timeRange === "month") {
+      startDate = new Date();
+      startDate.setDate(startDate.getDate() - 30);
+    }
+
+    let query = supabase
+      .from("video_analytics")
+      .select("event_type");
+
+    if (startDate) {
+      query = query.gte("created_at", startDate.toISOString());
+    }
+
+    const { data: events } = await query;
+
+    // Group by event type
+    const eventCounts: Record<string, number> = {};
+    events?.forEach(event => {
+      eventCounts[event.event_type] = (eventCounts[event.event_type] || 0) + 1;
+    });
+
+    // Calculate engagement metrics
+    const views = eventCounts["view"] || 0;
+    const starts = eventCounts["video_start"] || eventCounts["start"] || 0;
+    const progress25 = eventCounts["progress_25"] || 0;
+    const progress50 = eventCounts["progress_50"] || 0;
+    const progress75 = eventCounts["progress_75"] || 0;
+    const completions = eventCounts["complete"] || eventCounts["video_complete"] || 0;
+    const gatesShown = eventCounts["gate_shown"] || 0;
+    const gatesAuth = eventCounts["gate_authenticated"] || 0;
+
+    return {
+      data: {
+        views,
+        starts,
+        progress25,
+        progress50,
+        progress75,
+        completions,
+        gatesShown,
+        gatesAuthenticated: gatesAuth,
+        completionRate: starts > 0 ? ((completions / starts) * 100).toFixed(1) : "0",
+        gateConversionRate: gatesShown > 0 ? ((gatesAuth / gatesShown) * 100).toFixed(1) : "0",
+        eventBreakdown: eventCounts,
+      },
+      error: null,
+    };
+  } catch (error) {
+    console.error("Error fetching video engagement breakdown:", error);
+    return { data: null, error: "Failed to fetch video engagement" };
   }
 }

@@ -6,6 +6,7 @@ import {
   RssItem, 
   RssFeed, 
   updateRssItemStatus, 
+  updateRssItemTitle,
   deleteRssItem,
   bulkDeleteRssItems
 } from "@/app/actions/rss";
@@ -21,6 +22,12 @@ import {
   ChevronLeft,
   ChevronRight,
   ArrowUpDown,
+  Edit2,
+  Save,
+  X,
+  Clock,
+  Calendar,
+  CalendarDays,
 } from "lucide-react";
 import RssItemPreviewModal from "./rss-item-preview-modal";
 
@@ -59,6 +66,10 @@ export default function RssItemsClient({
   const [feedFilter, setFeedFilter] = useState(initialFeedId || "");
   const [sortBy, setSortBy] = useState(initialSortBy);
   const [sortOrder, setSortOrder] = useState(initialSortOrder);
+
+  // Inline editing state
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editedTitle, setEditedTitle] = useState("");
 
   // Sync items when initialItems changes (after filtering/pagination)
   useEffect(() => {
@@ -226,6 +237,63 @@ export default function RssItemsClient({
     setShowPreview(true);
   };
 
+  const handleStartEdit = (item: RssItem) => {
+    setEditingItemId(item.id);
+    setEditedTitle(item.title);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingItemId(null);
+    setEditedTitle("");
+  };
+
+  const handleSaveEdit = async (itemId: string) => {
+    if (!editedTitle.trim()) {
+      alert("Title cannot be empty");
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      const result = await updateRssItemTitle(itemId, editedTitle);
+      
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
+      // Update local state
+      setItems((prev) =>
+        prev.map((item) =>
+          item.id === itemId ? { ...item, title: editedTitle.trim() } : item
+        )
+      );
+      
+      setEditingItemId(null);
+      setEditedTitle("");
+    } catch (error) {
+      console.error("Error updating title:", error);
+      alert("Failed to update title");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleQuickFilter = (filter: "today" | "week" | "month") => {
+    const now = new Date();
+    const params = new URLSearchParams();
+    
+    // Keep existing filters
+    if (statusFilter) params.set("status", statusFilter);
+    if (feedFilter) params.set("feedId", feedFilter);
+    
+    // Set sort to fetched_at with desc order for time-based filters
+    params.set("sortBy", "fetched_at");
+    params.set("sortOrder", "desc");
+    params.set("page", "1");
+    
+    router.push(`/admin/rss/items?${params.toString()}`);
+  };
+
   const handleFilterChange = () => {
     const params = new URLSearchParams();
     if (statusFilter) params.set("status", statusFilter);
@@ -296,44 +364,73 @@ export default function RssItemsClient({
     <>
       {/* Filters */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-        <div className="flex items-center gap-4 flex-wrap">
-          <div className="flex items-center gap-2">
-            <Filter className="w-5 h-5 text-gray-400" />
-            <span className="font-medium text-gray-700">Filters:</span>
+        <div className="flex flex-col gap-4">
+          {/* Main Filters Row */}
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-2">
+              <Filter className="w-5 h-5 text-gray-400" />
+              <span className="font-medium text-gray-700">Filters:</span>
+            </div>
+
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+            >
+              <option value="">All Statuses</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+              <option value="published">Published</option>
+            </select>
+
+            <select
+              value={feedFilter}
+              onChange={(e) => setFeedFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+            >
+              <option value="">All Feeds</option>
+              {feeds.map((feed) => (
+                <option key={feed.id} value={feed.id}>
+                  {feed.name}
+                </option>
+              ))}
+            </select>
+
+            <button
+              onClick={handleFilterChange}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2 font-medium"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Apply Filters
+            </button>
           </div>
 
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
-          >
-            <option value="">All Statuses</option>
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-            <option value="published">Published</option>
-          </select>
-
-          <select
-            value={feedFilter}
-            onChange={(e) => setFeedFilter(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
-          >
-            <option value="">All Feeds</option>
-            {feeds.map((feed) => (
-              <option key={feed.id} value={feed.id}>
-                {feed.name}
-              </option>
-            ))}
-          </select>
-
-          <button
-            onClick={handleFilterChange}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
-          >
-            <RefreshCw className="w-4 h-4" />
-            Apply Filters
-          </button>
+          {/* Quick Date Filters Row */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm text-gray-600 font-medium">Quick filters:</span>
+            <button
+              onClick={() => handleQuickFilter("today")}
+              className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
+            >
+              <Clock className="w-3.5 h-3.5" />
+              Today
+            </button>
+            <button
+              onClick={() => handleQuickFilter("week")}
+              className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
+            >
+              <Calendar className="w-3.5 h-3.5" />
+              This Week
+            </button>
+            <button
+              onClick={() => handleQuickFilter("month")}
+              className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
+            >
+              <CalendarDays className="w-3.5 h-3.5" />
+              This Month
+            </button>
+          </div>
         </div>
       </div>
 
@@ -388,7 +485,7 @@ export default function RssItemsClient({
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-4 py-3 text-left">
+                <th className="px-4 py-3 text-left w-12">
                   <input
                     type="checkbox"
                     checked={selectedItems.size === items.length && items.length > 0}
@@ -399,28 +496,43 @@ export default function RssItemsClient({
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">
                   <button
                     onClick={() => handleSortChange("title")}
-                    className="flex items-center gap-1 hover:text-red-600"
+                    className="flex items-center gap-1 hover:text-red-600 transition-colors"
                   >
                     Title
-                    <ArrowUpDown className="w-3 h-3" />
+                    <ArrowUpDown className={`w-3 h-3 ${sortBy === "title" ? "text-red-600" : ""}`} />
                   </button>
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">
-                  Feed
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 w-40">
+                  <button
+                    onClick={() => handleSortChange("feed_id")}
+                    className="flex items-center gap-1 hover:text-red-600 transition-colors"
+                  >
+                    Source
+                    <ArrowUpDown className={`w-3 h-3 ${sortBy === "feed_id" ? "text-red-600" : ""}`} />
+                  </button>
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 w-32">
                   Status
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 w-40">
                   <button
                     onClick={() => handleSortChange("published_at")}
-                    className="flex items-center gap-1 hover:text-red-600"
+                    className="flex items-center gap-1 hover:text-red-600 transition-colors"
                   >
                     Published
-                    <ArrowUpDown className="w-3 h-3" />
+                    <ArrowUpDown className={`w-3 h-3 ${sortBy === "published_at" ? "text-red-600" : ""}`} />
                   </button>
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 w-40">
+                  <button
+                    onClick={() => handleSortChange("fetched_at")}
+                    className="flex items-center gap-1 hover:text-red-600 transition-colors"
+                  >
+                    Fetched
+                    <ArrowUpDown className={`w-3 h-3 ${sortBy === "fetched_at" ? "text-red-600" : ""}`} />
+                  </button>
+                </th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900 w-56">
                   Actions
                 </th>
               </tr>
@@ -428,123 +540,177 @@ export default function RssItemsClient({
             <tbody className="divide-y divide-gray-200">
               {items.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
                     No RSS items found
                   </td>
                 </tr>
               ) : (
-                items.map((item) => (
-                  <tr key={item.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3">
-                      <input
-                        type="checkbox"
-                        checked={selectedItems.has(item.id)}
-                        onChange={() => handleToggleSelect(item.id)}
-                        className="rounded border-gray-300"
-                      />
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-start gap-3">
-                        {item.image_url && (
-                          <img
-                            src={item.image_url}
-                            alt={item.title}
-                            className="w-16 h-16 object-cover rounded flex-shrink-0"
-                          />
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-gray-900 line-clamp-2">
-                            {item.title}
-                          </p>
-                          {item.description && (
-                            <p className="text-sm text-gray-600 line-clamp-1 mt-1">
-                              {item.description}
-                            </p>
+                items.map((item) => {
+                  const isEditing = editingItemId === item.id;
+                  
+                  return (
+                    <tr key={item.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedItems.has(item.id)}
+                          onChange={() => handleToggleSelect(item.id)}
+                          className="rounded border-gray-300"
+                        />
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-start gap-3">
+                          {item.image_url && (
+                            <img
+                              src={item.image_url}
+                              alt={item.title}
+                              className="w-16 h-16 object-cover rounded flex-shrink-0"
+                            />
                           )}
+                          <div className="flex-1 min-w-0">
+                            {isEditing ? (
+                              <div className="flex items-start gap-2">
+                                <input
+                                  type="text"
+                                  value={editedTitle}
+                                  onChange={(e) => setEditedTitle(e.target.value)}
+                                  className="flex-1 px-2 py-1 text-sm border border-blue-500 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  autoFocus
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      handleSaveEdit(item.id);
+                                    } else if (e.key === "Escape") {
+                                      handleCancelEdit();
+                                    }
+                                  }}
+                                />
+                                <div className="flex gap-1 flex-shrink-0">
+                                  <button
+                                    onClick={() => handleSaveEdit(item.id)}
+                                    disabled={isProcessing}
+                                    className="p-1 text-green-600 hover:bg-green-50 rounded transition-colors disabled:opacity-50"
+                                    title="Save"
+                                  >
+                                    <Save className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={handleCancelEdit}
+                                    className="p-1 text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                                    title="Cancel"
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex items-start gap-2">
+                                <p className="font-medium text-gray-900 line-clamp-2 flex-1">
+                                  {item.title}
+                                </p>
+                                <button
+                                  onClick={() => handleStartEdit(item)}
+                                  className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors flex-shrink-0"
+                                  title="Edit title"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            )}
+                            {item.description && !isEditing && (
+                              <p className="text-sm text-gray-600 line-clamp-1 mt-1">
+                                {item.description}
+                              </p>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="text-sm text-gray-900">
-                        {item.feed?.name || "Unknown"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
-                          item.status
-                        )}`}
-                      >
-                        {item.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="text-sm text-gray-600">
-                        {item.published_at
-                          ? new Date(item.published_at).toLocaleDateString()
-                          : new Date(item.fetched_at).toLocaleDateString()}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handlePreview(item)}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="Preview"
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="text-sm text-gray-900">
+                          {item.feed?.name || "Unknown"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
+                            item.status
+                          )}`}
                         >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        {item.status === "pending" && (
-                          <>
-                            <button
-                              onClick={() => handleStatusChange(item.id, "approved")}
-                              disabled={isProcessing}
-                              className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50"
-                              title="Approve"
-                            >
-                              <CheckCircle className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleStatusChange(item.id, "rejected")}
-                              disabled={isProcessing}
-                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-                              title="Reject"
-                            >
-                              <XCircle className="w-4 h-4" />
-                            </button>
-                          </>
-                        )}
-                        {(item.status === "approved" || item.status === "rejected") && (
+                          {item.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="text-sm text-gray-600">
+                          {item.published_at
+                            ? new Date(item.published_at).toLocaleDateString()
+                            : "—"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="text-sm text-gray-600" title={new Date(item.fetched_at).toLocaleString()}>
+                          {new Date(item.fetched_at).toLocaleDateString()}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1.5">
                           <button
-                            onClick={() => handleDisapprove(item.id)}
-                            disabled={isProcessing}
-                            className="p-2 text-yellow-600 hover:bg-yellow-50 rounded-lg transition-colors disabled:opacity-50"
-                            title="Set to Pending"
+                            onClick={() => handlePreview(item)}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="Preview"
                           >
-                            <RotateCcw className="w-4 h-4" />
+                            <Eye className="w-4 h-4" />
                           </button>
-                        )}
-                        <a
-                          href={item.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
-                          title="View Original"
-                        >
-                          <ExternalLink className="w-4 h-4" />
-                        </a>
-                        <button
-                          onClick={() => handleDelete(item.id)}
-                          disabled={isProcessing}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                          {item.status === "pending" && (
+                            <>
+                              <button
+                                onClick={() => handleStatusChange(item.id, "approved")}
+                                disabled={isProcessing}
+                                className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50"
+                                title="Approve"
+                              >
+                                <CheckCircle className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleStatusChange(item.id, "rejected")}
+                                disabled={isProcessing}
+                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                                title="Reject"
+                              >
+                                <XCircle className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
+                          {(item.status === "approved" || item.status === "rejected") && (
+                            <button
+                              onClick={() => handleDisapprove(item.id)}
+                              disabled={isProcessing}
+                              className="p-2 text-yellow-600 hover:bg-yellow-50 rounded-lg transition-colors disabled:opacity-50"
+                              title="Set to Pending"
+                            >
+                              <RotateCcw className="w-4 h-4" />
+                            </button>
+                          )}
+                          <a
+                            href={item.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+                            title="View Original"
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                          </a>
+                          <button
+                            onClick={() => handleDelete(item.id)}
+                            disabled={isProcessing}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
