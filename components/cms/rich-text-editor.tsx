@@ -9,6 +9,7 @@ import Placeholder from "@tiptap/extension-placeholder";
 import Underline from "@tiptap/extension-underline";
 import { Color } from "@tiptap/extension-color";
 import { TextStyle } from "@tiptap/extension-text-style";
+import { Node } from "@tiptap/core";
 import { useCallback, useState, useRef } from "react";
 import {
   Bold,
@@ -31,6 +32,96 @@ import {
 } from "lucide-react";
 import { uploadArticleMedia as clientUploadArticleMedia } from "@/lib/utils/client-upload";
 
+// Custom extension to handle HTML5 video tags
+const VideoHTML = Node.create({
+  name: 'videoHTML',
+  
+  group: 'block',
+  
+  atom: true,
+  
+  draggable: false,
+  
+  addAttributes() {
+    return {
+      src: {
+        default: null,
+      },
+      type: {
+        default: 'video/mp4',
+      },
+      class: {
+        default: 'w-full rounded-lg my-4',
+      },
+    };
+  },
+  
+  parseHTML() {
+    return [
+      {
+        tag: 'video',
+        priority: 100, // Higher priority to override other parsers
+        getAttrs: (dom) => {
+          if (typeof dom === 'string') return {};
+          const element = dom as HTMLElement;
+          const source = element.querySelector('source');
+          
+          return {
+            src: source?.getAttribute('src') || element.getAttribute('src') || '',
+            type: source?.getAttribute('type') || element.getAttribute('type') || 'video/mp4',
+            class: element.getAttribute('class') || 'w-full rounded-lg my-4',
+          };
+        },
+      },
+    ];
+  },
+  
+  renderHTML({ HTMLAttributes }) {
+    return [
+      'video',
+      {
+        controls: 'controls',
+        class: HTMLAttributes.class || 'w-full rounded-lg my-4',
+        style: 'max-width: 100%; height: auto;',
+      },
+      [
+        'source',
+        {
+          src: HTMLAttributes.src,
+          type: HTMLAttributes.type || 'video/mp4',
+        },
+      ],
+    ];
+  },
+  
+  addNodeView() {
+    return ({ node }) => {
+      const container = document.createElement('div');
+      container.className = 'my-4 not-prose';
+      container.contentEditable = 'false';
+      
+      const video = document.createElement('video');
+      video.setAttribute('controls', 'controls');
+      video.className = 'w-full rounded-lg';
+      video.style.maxWidth = '100%';
+      video.style.height = 'auto';
+      
+      const source = document.createElement('source');
+      source.setAttribute('src', node.attrs.src);
+      source.setAttribute('type', node.attrs.type || 'video/mp4');
+      
+      video.appendChild(source);
+      container.appendChild(video);
+      
+      return {
+        dom: container,
+        contentDOM: null,
+        ignoreMutation: () => true,
+      };
+    };
+  },
+});
+
 interface RichTextEditorProps {
   content: string;
   onChange: (content: string) => void;
@@ -52,7 +143,11 @@ export function RichTextEditor({
 
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        // Disable code block to prevent it from capturing video HTML
+        codeBlock: false,
+        code: false,
+      }),
       Underline,
       TextStyle,
       Color,
@@ -61,6 +156,7 @@ export function RichTextEditor({
           class: "rounded-lg max-w-full h-auto my-4",
         },
       }),
+      VideoHTML, // Add custom video extension
       Youtube.configure({
         controls: true,
         HTMLAttributes: {
@@ -139,9 +235,20 @@ export function RichTextEditor({
           // Insert image on a new line
           editor.chain().focus().enter().setImage({ src: url }).enter().run();
         } else if (validVideoTypes.includes(file.type)) {
-          // Insert HTML5 video on a new line
-          const videoHtml = `<video controls class="w-full rounded-lg my-4"><source src="${url}" type="${file.type}"></video>`;
-          editor.chain().focus().enter().insertContent(videoHtml).enter().run();
+          // Insert video using custom VideoHTML node
+          editor
+            .chain()
+            .focus()
+            .enter()
+            .insertContent({
+              type: 'videoHTML',
+              attrs: {
+                src: url,
+                type: file.type,
+              },
+            })
+            .enter()
+            .run();
         }
       } catch (error) {
         console.error("Upload failed:", error);
