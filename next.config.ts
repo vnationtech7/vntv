@@ -11,6 +11,12 @@ const nextConfig: NextConfig = {
     ],
     formats: ["image/avif", "image/webp"],
   },
+  // Increase body size limit for Server Actions (for file uploads)
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "50mb", // Allow up to 50MB for video uploads
+    },
+  },
   // Empty turbopack config to silence webpack config warning
   turbopack: {},
   webpack: (config, { isServer }) => {

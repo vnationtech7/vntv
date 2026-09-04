@@ -120,7 +120,7 @@ export function HeroSection({ content }: HeroSectionProps) {
           {/* Main Hero */}
           <Link
             href={isVideo ? `/videos/${currentItem.slug}` : `/news/${currentItem.slug}`}
-            className="group relative rounded-lg overflow-hidden bg-[--panel] aspect-video block lg:h-[440px]"
+            className="group relative rounded-lg overflow-hidden bg-[--panel] h-[500px] sm:h-[400px] md:aspect-video lg:h-[440px] block"
           >
             {/* Background - Video or Image */}
             <div className="absolute inset-0">
@@ -206,7 +206,7 @@ export function HeroSection({ content }: HeroSectionProps) {
               )}
 
               {/* Headline */}
-              <h1 className="text-3xl md:text-4xl font-extrabold leading-tight mb-4 max-w-2xl group-hover:text-[--red] transition-colors">
+              <h1 className="text-3xl md:text-4xl font-extrabold leading-tight mb-4 max-w-2xl text-white">
                 {currentItem.title}
               </h1>
 
@@ -354,7 +354,7 @@ export function HeroSection({ content }: HeroSectionProps) {
                     {/* Content Overlay - at bottom */}
                     <div className="absolute bottom-0 left-0 right-0 p-3">
                       {/* Title */}
-                      <h3 className="text-sm font-bold leading-tight line-clamp-2 mb-2 text-white drop-shadow-lg group-hover:text-[--red] transition-colors">
+                      <h3 className="text-sm font-bold leading-tight line-clamp-2 mb-2 text-white drop-shadow-lg">
                         {item.title}
                       </h3>
 

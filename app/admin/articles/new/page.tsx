@@ -18,6 +18,7 @@ import { getCategories } from "../../categories/actions";
 import { getAuthors } from "../../authors/actions";
 import { getTags } from "../../tags/actions";
 import { MediaPickerDialog } from "@/components/cms/media-picker-dialog";
+import { RichTextEditor } from "@/components/cms/rich-text-editor";
 import { type MediaAsset } from "../../media/actions";
 import { ArrowLeft, Save, Image as ImageIcon, X } from "lucide-react";
 
@@ -48,6 +49,7 @@ export default function NewArticlePage() {
   });
 
   const [bodyText, setBodyText] = useState("");
+  const [bodyHTML, setBodyHTML] = useState(""); // For rich text editor
   const [categories, setCategories] = useState<any[]>([]);
   const [authors, setAuthors] = useState<any[]>([]);
   const [tags, setTags] = useState<any[]>([]);
@@ -122,17 +124,9 @@ export default function NewArticlePage() {
         return;
       }
 
-      const bodyBlocks = bodyText
-        .split("\n\n")
-        .filter((p) => p.trim())
-        .map((paragraph) => ({
-          type: "paragraph",
-          content: paragraph.trim(),
-        }));
-
       const submissionData: ArticleFormData = {
         ...formData,
-        body: bodyBlocks,
+        body: bodyHTML, // Use HTML from rich text editor
         featured_image_id: selectedMedia?.id || null,
       };
 
@@ -246,17 +240,12 @@ export default function NewArticlePage() {
             >
               Article Body
             </label>
-            <Textarea
-              id="body"
-              value={bodyText}
-              onChange={(e) => setBodyText(e.target.value)}
-              placeholder="Write your article content here. Separate paragraphs with blank lines."
-              rows={15}
-              className="font-mono text-sm"
+            
+            <RichTextEditor
+              content={bodyHTML}
+              onChange={(html) => setBodyHTML(html)}
+              placeholder="Start writing your article... Drag & drop images or videos to upload"
             />
-            <p className="mt-1 text-xs text-text-tertiary">
-              Separate paragraphs with blank lines. Rich editor coming soon.
-            </p>
           </div>
         </div>
 

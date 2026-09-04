@@ -25,8 +25,34 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
     };
   }
 
+  // Build image URL - same logic as main component
   const imageUrl = article.featured_image
-    ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/media/${article.featured_image.storage_path}`
+    ? (() => {
+        const storagePath = article.featured_image.storage_path;
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+        
+        // If storage_path already contains /storage/v1/object/public/, it's a full URL
+        if (storagePath.includes('/storage/v1/object/public/')) {
+          return storagePath;
+        }
+        
+        // Determine bucket and path
+        let bucket = "media";
+        let path = storagePath;
+        
+        if (storagePath.startsWith("media/")) {
+          path = storagePath.substring(6);
+          bucket = "media";
+        } else if (storagePath.startsWith("videos/")) {
+          path = storagePath.substring(7);
+          bucket = "videos";
+        } else {
+          bucket = "media";
+          path = storagePath;
+        }
+        
+        return `${supabaseUrl}/storage/v1/object/public/${bucket}/${path}`;
+      })()
     : null;
 
   const publishedDate = article.published_at
@@ -113,8 +139,38 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
     6
   );
 
+  // Build image URL - handle both old and new storage path formats
   const imageUrl = article.featured_image
-    ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/media/${article.featured_image.storage_path}`
+    ? (() => {
+        const storagePath = article.featured_image.storage_path;
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+        
+        // If storage_path already contains /storage/v1/object/public/, it's a full URL
+        if (storagePath.includes('/storage/v1/object/public/')) {
+          return storagePath;
+        }
+        
+        // Determine bucket and path
+        let bucket = "media";
+        let path = storagePath;
+        
+        if (storagePath.startsWith("media/")) {
+          // Old format: media/path/to/file.jpg
+          path = storagePath.substring(6); // Remove "media/" prefix
+          bucket = "media";
+        } else if (storagePath.startsWith("videos/")) {
+          // Old format: videos/path/to/file.mp4
+          path = storagePath.substring(7); // Remove "videos/" prefix
+          bucket = "videos";
+        } else {
+          // New format: user-id/year/month/file.jpg (no bucket prefix)
+          // For featured images, they're always in media bucket
+          bucket = "media";
+          path = storagePath;
+        }
+        
+        return `${supabaseUrl}/storage/v1/object/public/${bucket}/${path}`;
+      })()
     : null;
 
   const publishedDate = article.published_at

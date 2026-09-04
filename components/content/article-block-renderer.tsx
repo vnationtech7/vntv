@@ -1,5 +1,25 @@
+"use client";
+
 import Image from "next/image";
 import { Quote } from "lucide-react";
+
+// Helper function to decode HTML entities
+function decodeHTMLEntities(html: string): string {
+  if (typeof window === 'undefined') {
+    // Server-side: use regex for basic entities
+    return html
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&amp;/g, '&')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'");
+  }
+  
+  // Client-side: use textarea trick
+  const textarea = document.createElement('textarea');
+  textarea.innerHTML = html;
+  return textarea.value;
+}
 
 export type ArticleBlock =
   | { type: "paragraph"; content: string }
@@ -13,17 +33,65 @@ export type ArticleBlock =
   | { type: "divider" };
 
 interface ArticleBlockRendererProps {
-  blocks: ArticleBlock[];
+  blocks: ArticleBlock[] | string; // Support both blocks array and HTML string
   className?: string;
 }
 
 export function ArticleBlockRenderer({ blocks, className = "" }: ArticleBlockRendererProps) {
+  // Handle both HTML string and blocks array
+  if (typeof blocks === "string") {
+    // Check if the string is JSON-encoded (has quotes around it)
+    let htmlContent = blocks;
+    
+    // If it starts and ends with quotes, it's a JSON string - parse it
+    if (blocks.startsWith('"') && blocks.endsWith('"')) {
+      try {
+        htmlContent = JSON.parse(blocks);
+      } catch (e) {
+        // If parsing fails, use as-is
+        console.error("Failed to parse JSON string:", e);
+      }
+    }
+    
+    // Check if HTML is escaped (contains &lt; or &gt;)
+    if (htmlContent.includes('&lt;') || htmlContent.includes('&gt;')) {
+      htmlContent = decodeHTMLEntities(htmlContent);
+    }
+    
+    // It's HTML content from rich text editor
+    return (
+      <div 
+        className={`prose prose-lg max-w-none text-text-primary prose-img:rounded-lg prose-video:rounded-lg prose-video:w-full ${className}`}
+        dangerouslySetInnerHTML={{ __html: htmlContent }}
+      />
+    );
+  }
+  
+  // If blocks is a JSONB that contains a string (quoted HTML), extract it
+  if (typeof blocks === 'object' && blocks !== null && !Array.isArray(blocks)) {
+    // It might be a JSON object containing HTML
+    let htmlContent = (blocks as any).html || JSON.stringify(blocks);
+    
+    // Decode if needed
+    if (htmlContent.includes('&lt;') || htmlContent.includes('&gt;')) {
+      htmlContent = decodeHTMLEntities(htmlContent);
+    }
+    
+    return (
+      <div 
+        className={`prose prose-lg max-w-none text-text-primary prose-img:rounded-lg prose-video:rounded-lg prose-video:w-full ${className}`}
+        dangerouslySetInnerHTML={{ __html: htmlContent }}
+      />
+    );
+  }
+  
   if (!blocks || blocks.length === 0) {
     return (
       <p className="text-text-secondary">No content available.</p>
     );
   }
 
+  // It's structured blocks
   return (
     <div className={`prose prose-lg max-w-none text-text-primary ${className}`}>
       {blocks.map((block, index) => (

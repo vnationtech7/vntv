@@ -21,6 +21,7 @@ import { getCategories } from "../../categories/actions";
 import { getAuthors } from "../../authors/actions";
 import { getTags } from "../../tags/actions";
 import { MediaPickerDialog } from "@/components/cms/media-picker-dialog";
+import { RichTextEditor } from "@/components/cms/rich-text-editor";
 import { type MediaAsset, getMediaAsset } from "../../media/actions";
 import { ArrowLeft, Save, Image as ImageIcon, X } from "lucide-react";
 
@@ -55,8 +56,8 @@ export default function ArticleEditorPage() {
     tag_ids: [],
   });
 
-  // Content body (simplified plain text for now)
-  const [bodyText, setBodyText] = useState("");
+  // Content body (as HTML from rich text editor)
+  const [bodyHTML, setBodyHTML] = useState("");
 
   // Dropdown options
   const [categories, setCategories] = useState<any[]>([]);
@@ -127,12 +128,23 @@ export default function ArticleEditorPage() {
               tag_ids: articleTags || [],
             });
 
-            // Convert body blocks to text (simplified)
+            // Convert body blocks to HTML for rich text editor
             if (Array.isArray(article.body) && article.body.length > 0) {
-              const text = article.body
-                .map((block: any) => block.content || "")
-                .join("\n\n");
-              setBodyText(text);
+              // Convert blocks to HTML
+              const html = article.body
+                .map((block: any) => {
+                  if (block.type === "paragraph") {
+                    return `<p>${block.content}</p>`;
+                  } else if (block.type === "heading") {
+                    return `<h${block.level}>${block.content}</h${block.level}>`;
+                  }
+                  // Add more conversions as needed
+                  return "";
+                })
+                .join("");
+              setBodyHTML(html);
+            } else if (typeof article.body === "string") {
+              setBodyHTML(article.body);
             }
 
             // Load featured image if exists
@@ -204,18 +216,10 @@ export default function ArticleEditorPage() {
         return;
       }
 
-      // Convert body text to structured blocks (simplified)
-      const bodyBlocks = bodyText
-        .split("\n\n")
-        .filter((p) => p.trim())
-        .map((paragraph) => ({
-          type: "paragraph",
-          content: paragraph.trim(),
-        }));
-
+      // Use HTML body directly (rich text editor output)
       const submissionData: ArticleFormData = {
         ...formData,
-        body: bodyBlocks,
+        body: bodyHTML, // Store as HTML string
         featured_image_id: selectedMedia?.id || null,
       };
 
@@ -351,17 +355,12 @@ export default function ArticleEditorPage() {
             >
               Article Body
             </label>
-            <Textarea
-              id="body"
-              value={bodyText}
-              onChange={(e) => setBodyText(e.target.value)}
-              placeholder="Write your article content here. Separate paragraphs with blank lines."
-              rows={15}
-              className="font-mono text-sm"
+            
+            <RichTextEditor
+              content={bodyHTML}
+              onChange={(html) => setBodyHTML(html)}
+              placeholder="Start writing your article... Drag & drop images or videos to upload"
             />
-            <p className="mt-1 text-xs text-text-tertiary">
-              Separate paragraphs with blank lines. Rich editor coming soon.
-            </p>
           </div>
         </div>
 
