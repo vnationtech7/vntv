@@ -4,6 +4,8 @@ import { PublicLayout } from "@/components/layout/public-layout";
 import { getArticle, getSuggestedArticles } from "@/app/actions/article";
 import { ArticleCard, ShareButtons, ArticleBlockRenderer, ViewTracker, SponsoredContentBadge } from "@/components/content";
 import { ArticleTopBanner, ArticleInline, ArticleSidebar } from "@/components/ads";
+import { CommentSection } from "@/components/comments/comment-section";
+import { LikeButton } from "@/components/engagement/like-button";
 import { formatDistanceToNow } from "date-fns";
 import type { Metadata } from "next";
 
@@ -139,6 +141,23 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
     6
   );
 
+  // Check if user has liked this article
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  let userHasLiked = false;
+  if (user) {
+    const { data: existingLike } = await supabase
+      .from('likes')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('content_type', 'article')
+      .eq('content_id', article.id)
+      .single();
+    
+    userHasLiked = !!existingLike;
+  }
+
   // Build image URL - handle both old and new storage path formats
   const imageUrl = article.featured_image
     ? (() => {
@@ -254,6 +273,21 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
                   day: "numeric",
                 })}
               </time>
+              {article.view_count > 0 && (
+                <>
+                  <span>•</span>
+                  <span>{article.view_count.toLocaleString()} views</span>
+                </>
+              )}
+              <span>•</span>
+              <LikeButton
+                contentType="article"
+                contentId={article.id}
+                initialLiked={userHasLiked}
+                initialLikeCount={article.like_count || 0}
+                size="sm"
+                showCount={true}
+              />
               {article.is_breaking && (
                 <>
                   <span>•</span>
@@ -310,7 +344,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
             <ArticleInline />
 
             {/* Social Sharing */}
-            <div className="mt-12 pt-8 border-t border-border">
+            <div className="mt-6">
               <ShareButtons
                 url={`/news/${article.slug}`}
                 title={article.title}
@@ -350,6 +384,13 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
                 </p>
               </div>
             )}
+
+            {/* Comments Section */}
+            <CommentSection
+              contentType="article"
+              contentId={article.id}
+              initialCommentCount={article.comment_count || 0}
+            />
           </article>
 
           {/* Sidebar - Suggested Articles */}

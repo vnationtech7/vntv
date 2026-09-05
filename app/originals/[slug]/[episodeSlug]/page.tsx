@@ -3,6 +3,8 @@ import { PublicLayout } from "@/components/layout/public-layout";
 import { getEpisodeBySlug, getProgrammeEpisodes } from "@/app/actions/episode";
 import { VideoPagePlayer, VideoAnalyticsTracker } from "@/components/video";
 import { ShareButtons } from "@/components/content";
+import { CommentSection } from "@/components/comments/comment-section";
+import { LikeButton } from "@/components/engagement/like-button";
 import { Button } from "@/components/ui";
 import Link from "next/link";
 import Image from "next/image";
@@ -94,6 +96,24 @@ export default async function EpisodePage({ params }: EpisodePageProps) {
 
   const episode = episodeResult.data;
   const allEpisodes = (allEpisodesResult.data || []).filter((ep) => ep.is_published);
+
+  // Check if user has liked this episode
+  const { createClient } = await import("@/lib/supabase/server");
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  let userHasLiked = false;
+  if (user) {
+    const { data: existingLike } = await supabase
+      .from('likes')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('content_type', 'episode')
+      .eq('content_id', episode.id)
+      .single();
+    
+    userHasLiked = !!existingLike;
+  }
 
   // Get related episodes (other episodes from same programme, excluding current)
   const relatedEpisodes = allEpisodes
@@ -194,11 +214,22 @@ export default async function EpisodePage({ params }: EpisodePageProps) {
 
               {/* Meta Info */}
               {episode.published_at && (
-                <div className="flex items-center gap-2 text-sm text-text-secondary mb-6">
-                  <Calendar className="w-4 h-4" />
-                  <span>
-                    {formatDistanceToNow(new Date(episode.published_at), { addSuffix: true })}
-                  </span>
+                <div className="flex items-center gap-4 text-sm text-text-secondary mb-6 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4" />
+                    <span>
+                      {formatDistanceToNow(new Date(episode.published_at), { addSuffix: true })}
+                    </span>
+                  </div>
+                  <span>•</span>
+                  <LikeButton
+                    contentType="episode"
+                    contentId={episode.id}
+                    initialLiked={userHasLiked}
+                    initialLikeCount={episode.like_count || 0}
+                    size="sm"
+                    showCount={true}
+                  />
                 </div>
               )}
 
@@ -262,6 +293,15 @@ export default async function EpisodePage({ params }: EpisodePageProps) {
                   </Link>
                 </div>
               )}
+
+              {/* Comments Section */}
+              <div className="mt-8">
+                <CommentSection
+                  contentType="episode"
+                  contentId={episode.id}
+                  initialCommentCount={episode.comment_count || 0}
+                />
+              </div>
             </div>
           </div>
 

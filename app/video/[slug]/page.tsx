@@ -3,6 +3,9 @@ import { getVideo, getSuggestedVideos, type VideoData } from "@/app/actions/vide
 import { VideoPagePlayer, VideoAnalyticsTracker } from "@/components/video";
 import { VideoCard, ShareButtons } from "@/components/content";
 import { PublicLayout } from "@/components/layout/public-layout";
+import { CommentSection } from "@/components/comments/comment-section";
+import { LikeButton } from "@/components/engagement/like-button";
+import { createClient } from "@/lib/supabase/server";
 import { Eye, Calendar, Tag } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import type { Metadata } from "next";
@@ -25,6 +28,23 @@ export default async function VideoPage({ params }: VideoPageProps) {
     video.video_type,
     6
   );
+
+  // Check if user has liked this video
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  let userHasLiked = false;
+  if (user) {
+    const { data: existingLike } = await supabase
+      .from('likes')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('content_type', 'video')
+      .eq('content_id', video.id)
+      .single();
+    
+    userHasLiked = !!existingLike;
+  }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const thumbnailUrl = video.thumbnail?.storage_path
@@ -130,6 +150,15 @@ export default async function VideoPage({ params }: VideoPageProps) {
                     <span>{formatDuration(video.duration_seconds)}</span>
                   </>
                 )}
+                <span>•</span>
+                <LikeButton
+                  contentType="video"
+                  contentId={video.id}
+                  initialLiked={userHasLiked}
+                  initialLikeCount={video.like_count || 0}
+                  size="sm"
+                  showCount={true}
+                />
               </div>
 
               {/* Description */}
@@ -149,6 +178,13 @@ export default async function VideoPage({ params }: VideoPageProps) {
                   description={video.description || undefined}
                 />
               </div>
+
+              {/* Comments Section */}
+              <CommentSection
+                contentType="video"
+                contentId={video.id}
+                initialCommentCount={video.comment_count || 0}
+              />
             </div>
           </div>
 

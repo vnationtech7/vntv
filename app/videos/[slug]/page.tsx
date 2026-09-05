@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PublicLayout } from "@/components/layout/public-layout";
 import { SuggestedVideos } from "@/components/content";
+import { CommentSection } from "@/components/comments/comment-section";
+import { LikeButton } from "@/components/engagement/like-button";
 
 interface VideoPageProps {
   params: {
@@ -122,6 +124,23 @@ export default async function VideoPage({ params }: VideoPageProps) {
   // Get suggested videos
   const suggestedVideos = await getSuggestedVideos(video.id, video.video_type, 6);
 
+  // Check if user has liked this video
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  let userHasLiked = false;
+  if (user) {
+    const { data: existingLike } = await supabase
+      .from('likes')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('content_type', 'video')
+      .eq('content_id', video.id)
+      .single();
+    
+    userHasLiked = !!existingLike;
+  }
+
   const publishedDate = video.published_at
     ? new Date(video.published_at)
     : new Date(video.created_at);
@@ -208,6 +227,15 @@ export default async function VideoPage({ params }: VideoPageProps) {
               <span>{video.view_count.toLocaleString()} views</span>
             </>
           )}
+          <span>•</span>
+          <LikeButton
+            contentType="video"
+            contentId={video.id}
+            initialLiked={userHasLiked}
+            initialLikeCount={video.like_count || 0}
+            size="sm"
+            showCount={true}
+          />
         </div>
 
         {/* Video Player */}
@@ -268,6 +296,13 @@ export default async function VideoPage({ params }: VideoPageProps) {
             </dd>
           </dl>
         </div>
+
+        {/* Comments Section */}
+        <CommentSection
+          contentType="video"
+          contentId={video.id}
+          initialCommentCount={video.comment_count || 0}
+        />
 
         {/* Suggested Videos */}
         {suggestedVideos.length > 0 && (

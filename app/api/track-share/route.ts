@@ -14,29 +14,28 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = await createClient();
+    
+    // Get user (optional - shares can be tracked without auth)
+    const { data: { user } } = await supabase.auth.getUser();
 
-    // Get user ID if authenticated
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    // Get IP address from headers
+    const ip = request.headers.get("x-forwarded-for") || 
+               request.headers.get("x-real-ip") || 
+               "unknown";
 
-    // Get IP address and user agent
-    const ipAddress = request.headers.get("x-forwarded-for") || 
-                     request.headers.get("x-real-ip") || 
-                     "unknown";
-    const userAgent = request.headers.get("user-agent") || "unknown";
+    // Insert share record
+    const { error: insertError } = await (supabase as any)
+      .from("social_shares")
+      .insert({
+        content_type: contentType,
+        content_id: contentId,
+        platform,
+        user_id: user?.id || null,
+        ip_address: ip,
+      });
 
-    // Insert share event
-    const { error } = await supabase.from("social_shares").insert({
-      content_type: contentType as "article" | "video",
-      content_id: contentId,
-      platform: platform,
-      user_id: user?.id || null,
-      ip_address: ipAddress as string,
-    } as any);
-
-    if (error) {
-      console.error("Error tracking share:", error);
+    if (insertError) {
+      console.error("Error tracking share:", insertError);
       return NextResponse.json(
         { error: "Failed to track share" },
         { status: 500 }
